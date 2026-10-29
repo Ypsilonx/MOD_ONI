@@ -8,8 +8,9 @@ platí pravidla níže.
 
 ## Spuštění a ověření
 
-- Build: `dotnet build` (hra musí být vypnutá, jinak je DLL ve složce modu zamčená).
-- Nasazení: zatím ručně (`bin\` → `mods\Dev\InfiniteGenerator\`). Task 2 plánu to zautomatizuje.
+- Build + nasazení: `dotnet build`. Target `DeployMod` zkopíruje DLL a obsah `mod/` do
+  `<složka mimo OneDrive>\Dev\InfiniteGenerator\`. Když hra běží, build skončí chybou (DLL je zamčená).
+- Cesty (hra, složka modů, název modu): `Directory.Build.props`.
 - Ověření ve hře: spustit hru, pak projít `%USERPROFILE%\AppData\LocalLow\Klei\Oxygen Not Included\Player.log`
   (řádky `[MOD_ONI]`, `Loading MOD dll`, výjimky). Mod, který shodí hru, hra sama vypne
   (`crash_count` v `mods\mods.json`).
@@ -18,7 +19,9 @@ platí pravidla níže.
 
 - `MOD_ONI.cs`: celý mod v jednom souboru (UserMod2, config budovy, komponenta, Harmony patche).
   Task 3 plánu ho rozdělí.
-- `mod_info.yaml`: metadata pro hru (build, APIVersion).
+- `mod/`: soubory kopírované do složky modu: `mod.yaml` (název, staticID) a `mod_info.yaml`
+  (build, APIVersion; DLC přes `requiredDlcIds`/`forbiddenDlcIds`, `supportedContent` je zastaralé).
+- `Directory.Build.props`: cesty a název modu.
 - `animace_názvy.txt`: výpis dostupných animací generátorů ze hry (podklad pro volbu `anim`).
 - `docs/mods-audit.md`: audit modů nainstalovaných ve hře a příčina pádů (OneDrive).
 - `docs/plans/`: aktuální plán.

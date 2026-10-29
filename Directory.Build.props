@@ -1,0 +1,11 @@
+<Project>
+  <!-- Cesty k hře a ke složce modů. Uprav tady, když se hra nebo složka modů přesune. -->
+  <PropertyGroup>
+    <GameDir><Steam>\steamapps\common\OxygenNotIncluded</GameDir>
+    <ManagedDir>$(GameDir)\OxygenNotIncluded_Data\Managed</ManagedDir>
+    <!-- Junction z Dokumenty\Klei\OxygenNotIncluded\mods vede sem (mimo OneDrive). -->
+    <ModsDir><složka mimo OneDrive></ModsDir>
+    <ModName>InfiniteGenerator</ModName>
+    <ModDeployDir>$(ModsDir)\Dev\$(ModName)</ModDeployDir>
+  </PropertyGroup>
+</Project>
