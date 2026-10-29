@@ -34,7 +34,10 @@ namespace InfiniteGenerator
                 noise: noiseLevel
             );
 
-            buildingDef.GeneratorWattageRating = 5000f;
+            // Výkon v defu jen pro náhled v menu stavby; skutečný výkon má každá budova
+            // v InfiniteGeneratorController (viz Generator_WattageRating_Patch).
+            buildingDef.GeneratorWattageRating = InfiniteGeneratorController.DefaultWattage;
+            // Kapacita bufferu v J; musí pokrýt max. výkon za jeden tick (10 kW × 0,2 s = 2 kJ).
             buildingDef.GeneratorBaseCapacity = 5000f;
             buildingDef.RequiresPowerOutput = true;
             buildingDef.PowerOutputOffset = new CellOffset(0, 0);

@@ -2,7 +2,10 @@ using HarmonyLib;
 
 namespace InfiniteGenerator
 {
-    /// <summary>Registrace budovy: texty, zařazení do menu Power a registrace configu.</summary>
+    /// <summary>
+    /// Texty a zařazení budovy do menu Power. Samotný InfiniteGeneratorConfig registruje hra
+    /// sama (najde IBuildingConfig v DLL modu); ruční RegisterBuilding vedl k duplicitě.
+    /// </summary>
     [HarmonyPatch(typeof(GeneratedBuildings), nameof(GeneratedBuildings.LoadGeneratedBuildings))]
     public static class LoadGeneratedBuildings_Patch
     {
@@ -10,13 +13,9 @@ namespace InfiniteGenerator
         public static void Prefix()
         {
             ModStrings.Register();
-            ModUtil.AddBuildingToPlanScreen("Power", InfiniteGeneratorConfig.ID);
-        }
-
-        /// <summary>Po načtení budov ručně zaregistruje config.</summary>
-        public static void Postfix()
-        {
-            BuildingConfigManager.Instance.RegisterBuilding(new InfiniteGeneratorConfig());
+            // Podkategorie "generators" (jako DevGenerator); bez ní hra v logu hlásí
+            // "has not been added to plan screen subcategory organization".
+            ModUtil.AddBuildingToPlanScreen("Power", InfiniteGeneratorConfig.ID, "generators");
         }
     }
 }
