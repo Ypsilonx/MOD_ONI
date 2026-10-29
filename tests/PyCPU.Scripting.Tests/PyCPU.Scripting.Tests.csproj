@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Testy Python hostu mimo hru (.NET Framework 4.8 místo Mono ve hře). Spuštění: dotnet test tests\PyCPU.Scripting.Tests
+    Ověřuje jen PyCPU.Scripting; napojení na hru se ověřuje ve hře.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <!-- IronPython a DLL hry chtějí různé verze System.Memory/Unsafe; na .NET Frameworku to řeší redirecty. -->
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <!-- testhost.net48 přesměrovává System.Memory na 4.0.5.0 (balíček 4.6.3); bez něj IronPython nenačte. -->
+    <PackageReference Include="System.Memory" Version="4.6.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\mods\PyCPU.Scripting\PyCPU.Scripting.csproj" />
+    <!-- Rozhraní IScriptInstance; Scripting ho referencuje s Private=false, tady ho potřebujeme zkopírovat. -->
+    <ProjectReference Include="..\..\mods\PyCPU\PyCPU.csproj" />
+    <Reference Include="Newtonsoft.Json" HintPath="$(ManagedDir)\Newtonsoft.Json.dll" />
+  </ItemGroup>
+</Project>

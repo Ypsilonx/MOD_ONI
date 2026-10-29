@@ -34,15 +34,22 @@ Analýza ONICPU (MIT, imengyu, poslední commit 2026-01):
      „Načíst z knihovny“.
    - UI ve hře je malé: skript, stav, log, hodnoty pinů a tlačítka výše. Editor ve hře (jako ONICPU)
      zamítnut: velký a křehký kus UI, psaní kódu v něm je nepohodlné.
-4. **API skriptu (návrh):**
+4. **API skriptu:**
    ```python
+   import math                  # povolené jen math, cmath, itertools
    def tick(io, storage):      # povinné, 5× za s
        io.out[0] = io.inp[0] and not io.inp[1]
-       io.log(f"P0={io.inp[0]}")
+       io.log("P0", io.inp[0])  # print() dělá totéž
    def start(io, storage): ...  # volitelné
    def stop(io, storage): ...   # volitelné
    ```
-   `storage` je dict uložený do savu (jen JSON typy). Přístup k .NET (`import clr`) zakázat.
+   - `io.inp`/`io.out`: seznamy 4 čísel. Výstupy se ořežou na 32 bitů, bool je 0/1, float se ořízne.
+   - `storage`: dict uložený do savu (jen JSON typy, int max. 64 bitů).
+   - Log drží posledních 20 řádků. Po první chybě skript stojí až do znovunačtení.
+   - Sandbox chrání proti omylu, ne proti úmyslu: blokuje `import` mimo seznam a `open`/`input`/`exit`.
+     Přes .NET objekty by se skript ven dostal (single-player, skripty si hráč píše sám).
+   - Limit 10 000 trace kroků na volání (`PythonBackend.MaxSteps`), přerušení přes `Thread.Abort`, takže ho
+     `try/except` ve skriptu nespolkne.
 5. **Hardware:** jedna budova 2×2, 4 ribbon vstupy + 4 ribbon výstupy (32bit) a kontrolní port
    „běží/stop“. Další velikosti až podle potřeby.
 

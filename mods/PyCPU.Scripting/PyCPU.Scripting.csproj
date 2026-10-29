@@ -9,12 +9,17 @@
     <RootNamespace>PyCPU.Scripting</RootNamespace>
     <!-- Přibalené knihovny (IronPython + DLR) musí skončit ve výstupu, odkud je DeployMod zkopíruje. -->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <!-- MSB3277: DLL hry chtějí System.Memory/Unsafe novější než IronPython. Ve hře se použijí verze hry
+         (DeployMod je nepřibaluje) a IronPython s nimi běží (ověřeno spikem), varování je tu jen šum. -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="IronPython" Version="3.4.2" />
     <!-- Rozhraní IScriptBackend; PyCPU.dll už ve hře je, nekopírovat. -->
     <ProjectReference Include="..\PyCPU\PyCPU.csproj" Private="false" />
+    <!-- storage ↔ JSON; hra Newtonsoft má, nepřibalovat. -->
+    <Reference Include="Newtonsoft.Json" HintPath="$(ManagedDir)\Newtonsoft.Json.dll" Private="false" />
   </ItemGroup>
 
   <ItemGroup>

@@ -49,7 +49,7 @@
 
   <!-- Po buildu nasadí DLL (a u modu i obsah mod/) do hry. Za běhu hry jsou DLL zamčené, proto kontrola předem. -->
   <Target Name="DeployMod" AfterTargets="Build" Condition="'$(IsOniProject)' == 'true'">
-    <Exec Command="tasklist /NH /FI &quot;IMAGENAME eq OxygenNotIncluded.exe&quot; | find /I &quot;OxygenNotIncluded.exe&quot; &gt;NUL"
+    <Exec Command="tasklist /NH /FI &quot;IMAGENAME eq OxygenNotIncluded.exe&quot; | &quot;$(SystemRoot)\System32\find.exe&quot; /I &quot;OxygenNotIncluded.exe&quot; &gt;NUL"
           IgnoreExitCode="true" StandardOutputImportance="low">
       <Output TaskParameter="ExitCode" PropertyName="GameRunningCheck" />
     </Exec>

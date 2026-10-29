@@ -1,131 +1,139 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Threading;
 using IronPython.Hosting;
+using IronPython.Runtime;
 using IronPython.Runtime.Exceptions;
+using Microsoft.Scripting.Hosting;
 
 namespace PyCPU.Scripting
 {
     /// <summary>
-    /// IronPython backend PyCPU. Zatím jen spike testy: běh IronPythonu v Unity 6 Mono, limit kroků
-    /// proti nekonečné smyčce, cena jednoho ticku a dosah skriptu na .NET.
+    /// IronPython backend PyCPU: jeden sdílený engine pro všechna CPU, každý skript má vlastní scope
+    /// s omezenými builtins (sandbox) a každé volání do Pythonu hlídá limit kroků.
+    /// Vytváří ho ScriptBackendLoader v PyCPU.dll přes reflexi (jméno typu nepřejmenovávat).
     /// </summary>
     public class PythonBackend : IScriptBackend
     {
-        /// <summary>Výjimka, kterou trace funkce přeruší skript po překročení limitu kroků.</summary>
-        private sealed class StepLimitExceeded : Exception
+        /// <summary>Maximum trace událostí (řádků, volání) na jedno volání skriptu. 10 000 kroků ≈ 0,14 s.</summary>
+        public const int MaxSteps = 10000;
+
+        /// <summary>Moduly, které smí skript importovat (vestavěné v IronPythonu, bez přístupu k systému).</summary>
+        private static readonly HashSet<string> AllowedModules = new HashSet<string> { "math", "cmath", "itertools" };
+
+        /// <summary>Builtins, které skript nedostane: přístup k souborům, konzoli a ukončení procesu.</summary>
+        private static readonly HashSet<string> BlockedBuiltins = new HashSet<string>
         {
-            public StepLimitExceeded() : base("step limit exceeded") { }
-        }
+            "open", "input", "exit", "quit", "help", "breakpoint", "copyright", "credits", "license",
+        };
 
-        private const string Script = @"
-def tick(x):
-    return x * 2
+        /// <summary>Pomocný kód v Pythonu: hlídaný import, logovací funkce a objekt io.</summary>
+        private const string Prelude = @"
+def make_import(real_import, allowed):
+    def __import__(name, globals=None, locals=None, fromlist=(), level=0):
+        if level != 0 or name.partition('.')[0] not in allowed:
+            raise ImportError(""import '%s' is not allowed in PyCPU"" % name)
+        return real_import(name, globals, locals, fromlist, level)
+    return __import__
 
-def endless():
-    while True:
-        pass
+def make_log(sink):
+    def log(*args, sep=' ', **kwargs):
+        sink(sep.join(str(a) for a in args))
+    return log
+
+class IO:
+    __slots__ = ('inp', 'out', 'log')
+    def __init__(self, log):
+        self.inp = []
+        self.out = []
+        self.log = log
 ";
 
-        /// <summary>Spustí všechny testy; výjimky zachytí a vrátí jako výsledek testu.</summary>
-        /// <returns>Řádek „SPIKE …: OK/FAIL …“ za každý test.</returns>
-        public string[] SelfTest()
-        {
-            var results = new List<string>();
-            Run(results, "1 základní běh", BasicRun);
-            Run(results, "2 limit kroků", StepLimit);
-            Run(results, "3 výkon", Performance);
-            Run(results, "4 import clr", ImportClr);
-            return results.ToArray();
-        }
+        /// <summary>Označení abortu vlákna, kterým trace funkce přeruší skript po překročení limitu kroků.</summary>
+        private static readonly object AbortMarker = new object();
 
-        /// <summary>Obalí test měřením času a zachycením výjimky.</summary>
-        private static void Run(List<string> results, string name, Func<string> test)
-        {
-            var sw = Stopwatch.StartNew();
-            try
-            {
-                string result = test();
-                results.Add($"SPIKE {name}: OK – {result} ({sw.ElapsedMilliseconds} ms)");
-            }
-            catch (Exception e)
-            {
-                results.Add($"SPIKE {name}: FAIL ({sw.ElapsedMilliseconds} ms) – {e}");
-            }
-        }
+        private readonly Dictionary<string, object> safeBuiltins = new Dictionary<string, object>();
+        private readonly object makeLog;
+        private readonly object ioClass;
+        private readonly TracebackDelegate trace;
+        private int steps;
 
-        /// <summary>Vytvoří engine, nadefinuje funkce a zavolá tick(21).</summary>
-        private static string BasicRun()
-        {
-            var engine = Python.CreateEngine();
-            var scope = engine.CreateScope();
-            engine.Execute(Script, scope);
-            object result = engine.Operations.Invoke(scope.GetVariable<object>("tick"), 21);
-            return $"tick(21) = {result}";
-        }
+        /// <summary>Sdílený engine (kvůli testům a chybovým výpisům přístupný i instancím skriptů).</summary>
+        internal ScriptEngine Engine { get; }
 
-        /// <summary>Nekonečnou smyčku musí trace funkce přerušit po 10 000 krocích.</summary>
-        private static string StepLimit()
+        /// <summary>Vytvoří engine (~0,6 s při prvním volání v procesu) a připraví sandbox.</summary>
+        public PythonBackend()
         {
-            var engine = Python.CreateEngine();
-            var scope = engine.CreateScope();
-            engine.Execute(Script, scope);
+            Engine = Python.CreateEngine();
+            ScriptScope prelude = Engine.CreateScope();
+            Engine.Execute(Prelude, prelude);
+            makeLog = prelude.GetVariable<object>("make_log");
+            ioClass = prelude.GetVariable<object>("IO");
 
-            int steps = 0;
-            TracebackDelegate trace = null;
+            ScriptScope builtins = Python.GetBuiltinModule(Engine);
+            foreach (KeyValuePair<string, object> item in builtins.GetItems())
+                if (!BlockedBuiltins.Contains(item.Key))
+                    safeBuiltins[item.Key] = item.Value;
+            var allowed = new PythonList();
+            foreach (string module in AllowedModules)
+                allowed.append(module);
+            safeBuiltins["__import__"] = Engine.Operations.Invoke(
+                prelude.GetVariable<object>("make_import"), builtins.GetVariable<object>("__import__"), allowed);
+
             trace = (frame, evt, payload) =>
             {
-                if (++steps > 10000)
-                    throw new StepLimitExceeded();
+                // Běžnou výjimku z trace by skript spolkl v try/except a IronPython by pak trace vypnul
+                // (smyčka by běžela dál bez hlídání). ThreadAbortException CLR znovu vyhodí na konci
+                // každého catch, takže projde až do RunLimited, kde se abort zruší.
+                if (++steps > MaxSteps)
+                    Thread.CurrentThread.Abort(AbortMarker);
                 return trace;
             };
-            Python.SetTrace(engine, trace);
+        }
+
+        /// <inheritdoc />
+        public IScriptInstance Load(string name, string source, string storageJson)
+        {
+            return new PythonScript(this, name, source, storageJson);
+        }
+
+        /// <summary>Vytvoří builtins pro jeden skript; <c>print</c> zapisuje do jeho logu.</summary>
+        /// <param name="logSink">Kam jdou řádky z <c>print</c> a <c>io.log</c>.</param>
+        /// <param name="log">Vrací logovací funkci, kterou dostane i objekt io.</param>
+        internal PythonDictionary CreateBuiltins(Action<string> logSink, out object log)
+        {
+            log = Engine.Operations.Invoke(makeLog, logSink);
+            var dict = new PythonDictionary();
+            foreach (KeyValuePair<string, object> item in safeBuiltins)
+                dict[item.Key] = item.Value;
+            dict["print"] = log;
+            return dict;
+        }
+
+        /// <summary>Vytvoří objekt <c>io</c> předávaný skriptu.</summary>
+        internal object CreateIo(object log) => Engine.Operations.Invoke(ioClass, log);
+
+        /// <summary>Spustí akci s hlídáním limitu kroků.</summary>
+        /// <returns>True, když akce překročila limit (výjimku ze skriptu v tom případě zahodí).</returns>
+        internal bool RunLimited(System.Action action)
+        {
+            steps = 0;
+            // Trace je v IronPythonu vázaný na vlákno, proto se zapíná pro každé volání zvlášť.
+            Python.SetTrace(Engine, trace);
             try
             {
-                engine.Operations.Invoke(scope.GetVariable<object>("endless"));
-                return "smyčka skončila sama?!";
+                action();
             }
-            catch (Exception e)
+            catch (Exception) when (steps > MaxSteps)
             {
-                return $"přerušeno po {steps} krocích výjimkou {e.GetType().Name}: {e.Message}";
+                if ((Thread.CurrentThread.ThreadState & System.Threading.ThreadState.AbortRequested) != 0)
+                    Thread.ResetAbort();
             }
             finally
             {
-                Python.SetTrace(engine, null);
+                Python.SetTrace(Engine, null);
             }
-        }
-
-        /// <summary>Změří 1 000 volání tick bez trace a s trace (počítadlem).</summary>
-        private static string Performance()
-        {
-            var engine = Python.CreateEngine();
-            var scope = engine.CreateScope();
-            engine.Execute(Script, scope);
-            object tick = scope.GetVariable<object>("tick");
-            var ops = engine.Operations;
-
-            var sw = Stopwatch.StartNew();
-            for (int i = 0; i < 1000; i++) ops.Invoke(tick, i);
-            long plain = sw.ElapsedMilliseconds;
-
-            int steps = 0;
-            TracebackDelegate trace = null;
-            trace = (frame, evt, payload) => { steps++; return trace; };
-            Python.SetTrace(engine, trace);
-            sw.Restart();
-            for (int i = 0; i < 1000; i++) ops.Invoke(tick, i);
-            long traced = sw.ElapsedMilliseconds;
-            Python.SetTrace(engine, null);
-
-            return $"1000× tick: bez trace {plain} ms, s trace {traced} ms ({steps} událostí)";
-        }
-
-        /// <summary>Zjistí, jestli skript dosáhne na .NET přes import clr (podklad pro sandbox).</summary>
-        private static string ImportClr()
-        {
-            var engine = Python.CreateEngine();
-            object r = engine.Execute("import clr\nimport System\nSystem.Environment.MachineName", engine.CreateScope());
-            return $"import clr funguje (MachineName={r}) – sandbox bude nutné řešit";
+            return steps > MaxSteps;
         }
     }
 }
