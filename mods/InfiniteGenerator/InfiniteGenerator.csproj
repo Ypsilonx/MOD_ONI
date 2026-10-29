@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Společné nastavení, reference na hru a nasazení: Directory.Build.props/.targets v kořeni repa. -->
+  <PropertyGroup>
+    <ModName>InfiniteGenerator</ModName>
+  </PropertyGroup>
+</Project>
