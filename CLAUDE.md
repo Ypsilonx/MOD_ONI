@@ -1,7 +1,8 @@
 # MOD_ONI
 
-Vlastní mody do hry Oxygen Not Included (C#, Harmony). Teď obsahuje jeden mod, **InfiniteGenerator**:
-generátor elektřiny bez vstupů s nastavitelným výkonem (testovací/sandbox budova). Velikost: M.
+Vlastní mody do hry Oxygen Not Included (C#, Harmony). Teď obsahuje jeden mod, **InfiniteGenerator**
+(generátor elektřiny bez vstupů, odložený, viz `STATUS.md`). Slouží zároveň jako vzor struktury
+pro další mody. Velikost: M.
 
 Doména: zatím bez L1 skillu. Skill `oni-mod` vznikne ve fázi 3 (viz `STATUS.md`), do té doby
 platí pravidla níže.
@@ -17,8 +18,12 @@ platí pravidla níže.
 
 ## Mapa projektu
 
-- `MOD_ONI.cs`: celý mod v jednom souboru (UserMod2, config budovy, komponenta, Harmony patche).
-  Task 3 plánu ho rozdělí.
+- `src/Mod.cs`: vstupní bod (`UserMod2`), prefix logu `[InfiniteGenerator]`.
+- `src/ModStrings.cs`: texty budovy (STRINGS).
+- `src/Buildings/`: `IBuildingConfig` budov.
+- `src/Components/`: komponenty budov. `InfiniteGeneratorController` je záměrně bez namespace,
+  protože hra ukládá komponenty do savu pod plným jménem typu. Typy komponent nepřejmenovávat.
+- `src/Patches/`: Harmony patche (registrace budovy, tech strom).
 - `mod/`: soubory kopírované do složky modu: `mod.yaml` (název, staticID) a `mod_info.yaml`
   (build, APIVersion; DLC přes `requiredDlcIds`/`forbiddenDlcIds`, `supportedContent` je zastaralé).
 - `Directory.Build.props`: cesty a název modu.
@@ -38,7 +43,17 @@ platí pravidla níže.
 
 ## Body napojení
 
-Viz tabulka v `docs/plans/2026-10-29-standardizace-modu.md` (UserMod2.OnLoad, LoadGeneratedBuildings,
-IBuildingConfig, Db.Initialize, serializace, Sim200ms, mod_info.yaml). Po dokončení plánu se přesune sem.
+| Vstupní bod | Co dělá | Na co si dát pozor |
+|---|---|---|
+| `KMod.UserMod2.OnLoad(Harmony)` | start modu, `base.OnLoad` aplikuje `[HarmonyPatch]` třídy | běží velmi brzy, `Db` ani `Assets` ještě neexistují |
+| `GeneratedBuildings.LoadGeneratedBuildings` (prefix) | `Strings.Add`, `ModUtil.AddBuildingToPlanScreen` | hra `IBuildingConfig` z modů registruje **sama**, ruční `RegisterBuilding` vede k duplicitě (`duplicate tag` v logu) |
+| `IBuildingConfig` | definice budovy | ID budovy neměnit (savy) |
+| `Db.Initialize` (postfix) | tech strom | ID technologií se mezi updaty mění |
+| `[SerializationConfig(OptIn)]` + `[Serialize]` | stav komponenty v savu | bez toho se hodnota po načtení vrátí na výchozí; typ se ukládá pod plným jménem |
+| `ISim200ms.Sim200ms(dt)` | periodická logika | volá se pro každou instanci, reflexi cachovat |
+| `mod_info.yaml` | `minimumSupportedBuild`, `APIVersion: 2`, `requiredDlcIds`/`forbiddenDlcIds` | `supportedContent` je zastaralé; `APIVersion` ≠ 2 → DLL se nenačte |
+
+Testování ve hře: sandbox (`Shift+S`), debug režim přes prázdný `OxygenNotIncluded_Data\debug_enable.txt`
+(`Backspace` zap/vyp, `Ctrl+F4` okamžité stavění, `Ctrl+F2` spawn dupliňáka). Konzole s příkazy ve hře není.
 
 Stav práce: viz `STATUS.md`.
