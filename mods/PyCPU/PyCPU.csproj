@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Herní část PyCPU (kořen složky modu). Záměrně BEZ reference na IronPython i na PyCPU.Scripting:
+    hra prochází typy této DLL dřív, než se zavolá OnLoad, a Mono při tom načítá typy polí –
+    jakákoli zmínka o typu z lib\ by v tu chvíli neměla odkud se načíst. S Pythonem se mluví
+    jen přes rozhraní IScriptBackend; implementaci načte ScriptBackendLoader z lib\PyCPU.Scripting.dll.
+    Společné nastavení, reference na hru a nasazení: Directory.Build.props/.targets v kořeni repa.
+  -->
+  <PropertyGroup>
+    <ModName>PyCPU</ModName>
+  </PropertyGroup>
+</Project>

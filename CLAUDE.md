@@ -1,35 +1,36 @@
 # MOD_ONI
 
-Vlastní mody do hry Oxygen Not Included (C#, Harmony). Teď obsahuje jeden mod, **InfiniteGenerator**
-(generátor elektřiny bez vstupů, odložený, viz `STATUS.md`). Slouží zároveň jako vzor struktury
-pro další mody. Velikost: M.
+Vlastní mody do hry Oxygen Not Included (C#, Harmony), každý v `mods/<ModName>/`:
+- **InfiniteGenerator**: generátor elektřiny bez vstupů, hotový a odložený; vzor jednoduchého modu.
+- **PyCPU**: programovatelné IO zařízení se skripty v Pythonu (IronPython), ve vývoji, viz `docs/specs/pycpu.md`.
+
+Velikost: M.
 
 Doména: zatím bez L1 skillu. Skill `oni-mod` vznikne ve fázi 3 (viz `STATUS.md`), do té doby
 platí pravidla níže.
 
 ## Spuštění a ověření
 
-- Build + nasazení: `dotnet build`. Target `DeployMod` zkopíruje DLL a obsah `mod/` do
-  `<složka mimo OneDrive>\Dev\InfiniteGenerator\`. Když hra běží, build skončí chybou (DLL je zamčená).
-- Cesty (hra, složka modů, název modu): `Directory.Build.props`.
-- Ověření ve hře: spustit hru, pak projít `%USERPROFILE%\AppData\LocalLow\Klei\Oxygen Not Included\Player.log`
-  (řádky `[MOD_ONI]`, `Loading MOD dll`, výjimky). Mod, který shodí hru, hra sama vypne
+- Build + nasazení: `dotnet build` (celé řešení) nebo `dotnet build mods\<ModName>`. Target `DeployMod`
+  zkopíruje DLL a obsah `mod/` do `<složka mimo OneDrive>\Dev\<ModName>\`. Když hra běží, build skončí chybou.
+- Ověření ve hře: mod z `Dev\` je po prvním nasazení vypnutý, zapnout v menu Mods. Pak projít
+  `%USERPROFILE%\AppData\LocalLow\Klei\Oxygen Not Included\Player.log` (řádky `[<ModName>]`, `Loading MOD dll`, výjimky). Mod, který shodí hru, hra sama vypne
   (`crash_count` v `mods\mods.json`).
 
 ## Mapa projektu
 
-- `src/Mod.cs`: vstupní bod (`UserMod2`), prefix logu `[InfiniteGenerator]`.
-- `src/ModStrings.cs`: texty budovy (STRINGS).
-- `src/Buildings/`: `IBuildingConfig` budov.
-- `src/Components/`: komponenty budov. `InfiniteGeneratorController` je záměrně bez namespace,
-  protože hra ukládá komponenty do savu pod plným jménem typu. Typy komponent nepřejmenovávat.
-- `src/Patches/`: Harmony patche (registrace budovy, tech strom).
-- `mod/`: soubory kopírované do složky modu: `mod.yaml` (název, staticID) a `mod_info.yaml`
-  (build, APIVersion; DLC přes `requiredDlcIds`/`forbiddenDlcIds`, `supportedContent` je zastaralé).
-- `Directory.Build.props`: cesty a název modu.
+- `Directory.Build.props`: cesty (hra, složka modů) a společné nastavení (net48). Uprav tady.
+- `Directory.Build.targets`: reference na DLL hry, nasazení `DeployMod`. Nepřibaluje DLL, které hra už má
+  (`System.Memory`…). Mod může vyřadit další DLL přes `<ModDllExclude Include="X.dll" />`.
+- `mods/<ModName>/<ModName>.csproj`: jen `ModName` a vlastní závislosti.
+- Struktura modu: `src/Mod.cs` (`UserMod2`), `src/Buildings/` (`IBuildingConfig`), `src/Components/`,
+  `src/Patches/` (Harmony), `mod/` (`mod.yaml` s názvem a staticID, `mod_info.yaml` s buildem a APIVersion;
+  DLC přes `requiredDlcIds`/`forbiddenDlcIds`, `supportedContent` je zastaralé).
+- Komponenty, které se ukládají do savu (`InfiniteGeneratorController`), nepřejmenovávat a neměnit jim namespace,
+  protože hra je ukládá pod plným jménem typu.
 - `animace_názvy.txt`: výpis dostupných animací generátorů ze hry (podklad pro volbu `anim`).
 - `docs/mods-audit.md`: audit modů nainstalovaných ve hře a příčina pádů (OneDrive).
-- `docs/plans/`: aktuální plán.
+- `docs/specs/`: návrhy (spec PyCPU). `docs/plans/`: aktuální plán.
 
 ## Rozhodnutí a pravidla tohoto projektu
 

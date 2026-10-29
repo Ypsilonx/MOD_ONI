@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Pythonová část PyCPU: IronPython host. Nasazuje se i s knihovnami do mods\Dev\PyCPU\lib\
+    (ModLibOf), kam hra nesahá; načítá ji PyCPU.dll až po startu hry.
+  -->
+  <PropertyGroup>
+    <ModLibOf>PyCPU</ModLibOf>
+    <AssemblyName>PyCPU.Scripting</AssemblyName>
+    <RootNamespace>PyCPU.Scripting</RootNamespace>
+    <!-- Přibalené knihovny (IronPython + DLR) musí skončit ve výstupu, odkud je DeployMod zkopíruje. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="IronPython" Version="3.4.2" />
+    <!-- Rozhraní IScriptBackend; PyCPU.dll už ve hře je, nekopírovat. -->
+    <ProjectReference Include="..\PyCPU\PyCPU.csproj" Private="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WPF ve hře není a SQLite nepotřebujeme. -->
+    <ModDllExclude Include="IronPython.Wpf.dll;IronPython.SQLite.dll" />
+    <!-- Hra volá GetTypes() na všech assembly v procesu; typy závislé na XAML/Remoting by ji shodily. -->
+    <ModStripDll Include="Microsoft.Dynamic.dll" Refs="System.Xaml;System.Runtime.Remoting" />
+  </ItemGroup>
+</Project>

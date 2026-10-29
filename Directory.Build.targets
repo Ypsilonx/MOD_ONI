@@ -1,0 +1,72 @@
+<Project>
+  <!--
+    Načítá se po csproj, takže tu už jsou známé hodnoty z konkrétního projektu. Druhy projektů:
+    - mod:        <ModName>X</ModName>           → DLL do kořene mods\Dev\X (hra ji skenuje, hledá UserMod2)
+    - knihovna:   <ModLibOf>X</ModLibOf>         → všechny DLL do mods\Dev\X\lib (hra je nevidí, mod si je
+                                                   načítá sám přes AppDomain.AssemblyResolve)
+    - ostatní (tools/…): nic z tohoto souboru se neuplatní.
+    Proč lib\: hra volá GetTypes() na každé DLL v kořeni modu a na všech assembly v procesu;
+    typ závislý na assembly, která ve hře chybí (Microsoft.Dynamic → System.Xaml), ji shodí.
+  -->
+  <PropertyGroup Condition="'$(ModName)' != ''">
+    <AssemblyName>$(ModName)</AssemblyName>
+    <RootNamespace>$(ModName)</RootNamespace>
+    <ModDeployDir>$(ModsDir)\Dev\$(ModName)</ModDeployDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ModLibOf)' != ''">
+    <ModDeployDir>$(ModsDir)\Dev\$(ModLibOf)\lib</ModDeployDir>
+  </PropertyGroup>
+  <PropertyGroup>
+    <IsOniProject Condition="'$(ModDeployDir)' != ''">true</IsOniProject>
+    <DllStripperProject>$(MSBuildThisFileDirectory)tools\DllStripper\DllStripper.csproj</DllStripperProject>
+  </PropertyGroup>
+
+  <!-- Reference na DLL hry. Private=false: nekopírovat je do výstupu, hra je má vlastní. -->
+  <ItemGroup Condition="'$(IsOniProject)' == 'true'">
+    <Reference Include="Assembly-CSharp" HintPath="$(ManagedDir)\Assembly-CSharp.dll" Private="false" />
+    <Reference Include="Assembly-CSharp-firstpass" HintPath="$(ManagedDir)\Assembly-CSharp-firstpass.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(ManagedDir)\0Harmony.dll" Private="false" />
+    <Reference Include="UnityEngine" HintPath="$(ManagedDir)\UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(ManagedDir)\UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="Unity.TextMeshPro" HintPath="$(ManagedDir)\Unity.TextMeshPro.dll" Private="false" />
+  </ItemGroup>
+
+  <!-- Soubory, které jdou do složky modu vedle DLL (mod.yaml, mod_info.yaml, anim/…). -->
+  <ItemGroup Condition="'$(ModName)' != ''">
+    <ModContent Include="mod\**\*" />
+  </ItemGroup>
+
+  <!--
+    Odstraní z přibalených DLL typy závislé na assembly, které ve hře nejsou (viz tools/DllStripper).
+    V csproj: <ModStripDll Include="X.dll" Refs="System.Xaml;System.Runtime.Remoting" />.
+    Upravuje jen kopii ve výstupu buildu; opakované spuštění nic nezmění.
+  -->
+  <Target Name="StripModDlls" AfterTargets="Build" BeforeTargets="DeployMod"
+          Condition="'$(IsOniProject)' == 'true' And '@(ModStripDll)' != ''">
+    <MSBuild Projects="$(DllStripperProject)" Targets="Build" Properties="Configuration=Release" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)tools\DllStripper\bin\DllStripper.dll&quot; &quot;$(OutDir)%(ModStripDll.Identity)&quot; $([System.String]::Copy('%(ModStripDll.Refs)').Replace(';', ' '))" />
+  </Target>
+
+  <!-- Po buildu nasadí DLL (a u modu i obsah mod/) do hry. Za běhu hry jsou DLL zamčené, proto kontrola předem. -->
+  <Target Name="DeployMod" AfterTargets="Build" Condition="'$(IsOniProject)' == 'true'">
+    <Exec Command="tasklist /NH /FI &quot;IMAGENAME eq OxygenNotIncluded.exe&quot; | find /I &quot;OxygenNotIncluded.exe&quot; &gt;NUL"
+          IgnoreExitCode="true" StandardOutputImportance="low">
+      <Output TaskParameter="ExitCode" PropertyName="GameRunningCheck" />
+    </Exec>
+    <Error Condition="'$(GameRunningCheck)' == '0'"
+           Text="Hra Oxygen Not Included běží – DLL modu je zamčená. Ukonči hru a spusť build znovu." />
+    <ItemGroup>
+      <ModDlls Include="$(OutDir)*.dll" />
+      <!-- DLL, které hra už má (System.Memory, Unsafe…), nepřibalovat – načetly by se dvě verze. -->
+      <ModDlls Remove="@(ModDlls)" Condition="Exists('$(ManagedDir)\%(Filename)%(Extension)')" />
+      <!-- Projekt může vyřadit nepotřebné DLL položkami <ModDllExclude Include="X.dll" />. -->
+      <ModDlls Remove="@(ModDllExclude->'$(OutDir)%(Identity)')" />
+      <!-- Staré DLL z minulých nasazení (jen tahle úroveň; lib\ spravuje knihovní projekt). -->
+      <StaleDlls Include="$(ModDeployDir)\*.dll" />
+    </ItemGroup>
+    <Delete Files="@(StaleDlls)" />
+    <Copy SourceFiles="@(ModDlls)" DestinationFolder="$(ModDeployDir)" Retries="0" />
+    <Copy SourceFiles="@(ModContent)" DestinationFiles="@(ModContent->'$(ModDeployDir)\%(RecursiveDir)%(Filename)%(Extension)')" Retries="0" />
+    <Message Importance="high" Text="Nasazeno: $(ModDeployDir)" />
+  </Target>
+</Project>

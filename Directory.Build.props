@@ -1,11 +1,15 @@
 <Project>
-  <!-- Cesty k hře a ke složce modů. Uprav tady, když se hra nebo složka modů přesune. -->
+  <!-- Společné nastavení všech modů v mods/*. Cesty uprav tady, když se hra nebo složka modů přesune. -->
   <PropertyGroup>
     <GameDir><Steam>\steamapps\common\OxygenNotIncluded</GameDir>
     <ManagedDir>$(GameDir)\OxygenNotIncluded_Data\Managed</ManagedDir>
     <!-- Junction z Dokumenty\Klei\OxygenNotIncluded\mods vede sem (mimo OneDrive). -->
     <ModsDir><složka mimo OneDrive></ModsDir>
-    <ModName>InfiniteGenerator</ModName>
-    <ModDeployDir>$(ModsDir)\Dev\$(ModName)</ModDeployDir>
+
+    <!-- Hra běží na Unity 6 (Mono s API .NET Framework 4.8). -->
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <OutputPath>bin\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 </Project>

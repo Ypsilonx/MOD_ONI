@@ -4,38 +4,33 @@ Aktualizováno: 2026-10-29
 
 ## Cíl
 
-Vybrat a rozjet další mod: buď nový, nebo úpravu modu ze Steamu. InfiniteGenerator je odložený.
+PyCPU: budova s 32bitovými ribbon porty řízená Python skriptem (`tick()` 5×/s), skripty jako `.py`
+vedle savu, editace ve VS Code. Spec: `docs/specs/pycpu.md`.
 
 ## Hotovo
 
-- Audit modů ve hře (`docs/mods-audit.md`). Pády způsoboval OneDrive, ne nekompatibilita.
-  Složka modů je junction na `<složka mimo OneDrive>`, mody se instalují jen ze Steamu.
-- Šablona projektu: git, build s automatickým nasazením do `mods\Dev\<ModName>` (net48, Harmony ze hry),
-  `mod/` s yaml soubory, kód rozdělený do `src/`.
-- InfiniteGenerator 1.1.0: zkompilovaný v nové struktuře, **odložený**. Hra má teď vlastní DEV budovy
-  v sandboxu, které dělají totéž. Ve hře vypnutý.
+- Audit modů, složka modů jako junction na `<složka mimo OneDrive>`, mody jen ze Steamu.
+- Repo pro víc modů (`mods/<Mod>/`), společný build s nasazením (`Directory.Build.props/.targets`).
+- InfiniteGenerator 1.2.0: hotový, odložený (hra má vlastní DEV generátor).
+- **Spike PyCPU úspěšný ve hře:** IronPython běží, limit kroků funguje, tick ~1–5 µs.
+  Vyřešené podmínky: knihovny v `lib\`, `PyCPU.dll` bez reference na IronPython, `DllStripper` na Microsoft.Dynamic.
 
 ## Rozpracováno
 
-- Uživatel postupně přidává mody ze Steamu, po každé dávce zkontrolovat Player.log.
+- Spike kód (`SpikePatches`, `PythonBackend.SelfTest`) se nahradí skutečnou implementací.
 
 ## Další krok
 
-1. Rozhodnout, jaký mod dál (nový / úprava cizího), a sepsat krátký spec do `docs/specs/`.
-2. Nástroje do `tools/`: `check-log.ps1` (filtr Player.log) a kontrola kompatibility z auditu
-   (`patches.py`, `gamemethods.ps1`, zatím ve scratchpadu session 2026-10-29).
-3. Skill `oni-mod` z nasbíraných poznatků.
+1. Plán PyCPU do `docs/plans/` (budova + porty, script host se sandboxem, soubory a ukládání, boční panel).
+2. Malý mod, který při startu hry odstraní atribut jen pro čtení ze složek modů (viz níže).
+3. Nástroje do `tools/`: filtr Player.log a kontrola kompatibility z auditu.
+4. Skill `oni-mod`.
 
 ## Otevřené otázky / slepé uličky
 
-- InfiniteGenerator 1.2.0 (task 4) ověřený ve hře: duplicita zmizela, dva generátory mají po načtení savu
-  každý svůj výkon (2000 W / 10000 W). Podkategorie v menu Power doplněna, zatím neověřeno.
-- **Otevřené:** složky modů měly atribut jen pro čtení i na `E:\` (bez OneDrive). Ověřeno, že právě ten
-  brání hře v mazání odinstalovaných modů. 2026-10-29 odstraněn ze všech 38 složek v `<složka mimo OneDrive>`.
-  Po dalším spuštění hry zkontrolovat, jestli se vrátí; tím se ukáže, jestli ho nastavuje hra.
-  Původ zatím neznámý, kód KMod atributy nenastavuje.
-- ❌ Reflexe na `Generator.wattageRating` a `KAnimControllerBase.animSpeed`: pole v Unity 6 verzi hry
-  neexistují, kód potichu nic nedělal. Používat `Generator.GenerateJoules` a `PlaySpeedMultiplier`.
-- ❌ Lokální kopie PeterHanových modů: samy se neaktualizují a po updatu hry zastarají. Brát ze Steamu.
-- ❌ Data hry v OneDrive bez junctionu: OneDrive nastavuje složkám jen pro čtení, hra pak nemůže mody
-  přeinstalovat a mody zůstanou napůl smazané. Nevracet se.
+- Atribut jen pro čtení na složkách modů: nastavuje ho hra při rozbalování modu ze Steamu (potvrzeno na
+  modu 3244925649). Brání pak smazání nebo aktualizaci modu. Ručně odstraněn, u nových modů se vrací.
+- ❌ IronPython knihovny v kořeni složky modu: hra na nich volá `GetTypes()` → pád na System.Xaml.
+- ❌ IronPython typy kdekoli v `PyCPU.dll` (i pole lambdy): Mono je načítá už při `GetTypes`, dřív než `OnLoad`.
+- ❌ Reflexe na `Generator.wattageRating` / `animSpeed`: v Unity 6 verzi hry neexistují.
+- ❌ Lokální kopie PeterHanových modů: samy se neaktualizují. Brát ze Steamu.
