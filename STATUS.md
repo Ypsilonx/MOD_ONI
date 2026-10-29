@@ -30,9 +30,10 @@ Vybrat a rozjet další mod: buď nový, nebo úpravu modu ze Steamu. InfiniteGe
 
 - InfiniteGenerator 1.2.0 (task 4) ověřený ve hře: duplicita zmizela, dva generátory mají po načtení savu
   každý svůj výkon (2000 W / 10000 W). Podkategorie v menu Power doplněna, zatím neověřeno.
-- **Otevřené:** složky modů mají atribut jen pro čtení i na `E:\` (bez OneDrive), dokonce i `Dev\InfiniteGenerator`.
-  Kód hry atributy nenastavuje, původ je neznámý. Hra pak nesmaže složku odinstalovaného modu
-  (`Steam\3801689112`, Access denied). OneDrive tedy možná nebyl jediná příčina.
+- **Otevřené:** složky modů měly atribut jen pro čtení i na `E:\` (bez OneDrive). Ověřeno, že právě ten
+  brání hře v mazání odinstalovaných modů. 2026-10-29 odstraněn ze všech 38 složek v `<složka mimo OneDrive>`.
+  Po dalším spuštění hry zkontrolovat, jestli se vrátí; tím se ukáže, jestli ho nastavuje hra.
+  Původ zatím neznámý, kód KMod atributy nenastavuje.
 - ❌ Reflexe na `Generator.wattageRating` a `KAnimControllerBase.animSpeed`: pole v Unity 6 verzi hry
   neexistují, kód potichu nic nedělal. Používat `Generator.GenerateJoules` a `PlaySpeedMultiplier`.
 - ❌ Lokální kopie PeterHanových modů: samy se neaktualizují a po updatu hry zastarají. Brát ze Steamu.
