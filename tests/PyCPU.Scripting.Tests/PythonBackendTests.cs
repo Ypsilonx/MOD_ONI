@@ -91,6 +91,37 @@ def stop(io, storage):
         }
 
         [Fact]
+        public void Sleep_ReportsTicksOnlyForCallThatRequestedIt()
+        {
+            var script = Load("def tick(io, storage):\n    if io.inp[0]:\n        io.sleep(io.inp[0])\n");
+            Tick(script, 4, 0, 0, 0);
+            Assert.Equal(4, script.SleepTicks);
+            Tick(script, 0, 0, 0, 0);
+            Assert.Equal(0, script.SleepTicks);
+        }
+
+        [Fact]
+        public void TickCount_IsVisibleAsIoTick()
+        {
+            var script = Load("def tick(io, storage):\n    if io.tick % 5 == 0:\n        io.out[1] = io.tick\n");
+            var outputs = new int[4];
+            for (int n = 0; n < 12; n++)
+            {
+                script.TickCount = n;
+                script.Tick(new int[4], outputs);
+            }
+            Assert.Equal(10, outputs[1]);
+        }
+
+        [Fact]
+        public void Sleep_InvalidArgumentIsError()
+        {
+            var script = Load("def tick(io, storage):\n    io.sleep(-1)\n");
+            Tick(script, 0, 0, 0, 0);
+            Assert.Contains("io.sleep", script.Error);
+        }
+
+        [Fact]
         public void MissingTick_IsError()
         {
             Assert.Contains("tick", backend.Load("test", "x = 1", null).Error);

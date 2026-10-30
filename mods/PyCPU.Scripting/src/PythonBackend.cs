@@ -27,7 +27,10 @@ namespace PyCPU.Scripting
             "open", "input", "exit", "quit", "help", "breakpoint", "copyright", "credits", "license",
         };
 
-        /// <summary>Pomocný kód v Pythonu: hlídaný import, logovací funkce a objekt io.</summary>
+        /// <summary>
+        /// Pomocný kód v Pythonu: hlídaný import, logovací funkce a objekt io. <c>io.sleep(n)</c> jen zapíše
+        /// počet ticků do <c>io.skip</c>, přeskakování řídí hra (PyCpu).
+        /// </summary>
         private const string Prelude = @"
 def make_import(real_import, allowed):
     def __import__(name, globals=None, locals=None, fromlist=(), level=0):
@@ -42,11 +45,17 @@ def make_log(sink):
     return log
 
 class IO:
-    __slots__ = ('inp', 'out', 'log')
+    __slots__ = ('inp', 'out', 'log', 'skip', 'tick')
     def __init__(self, log):
         self.inp = []
         self.out = []
         self.log = log
+        self.skip = 0
+        self.tick = 0
+    def sleep(self, ticks):
+        if not isinstance(ticks, int) or isinstance(ticks, bool) or ticks < 0:
+            raise ValueError('io.sleep(ticks): ticks musí být celé číslo >= 0')
+        self.skip = ticks
 ";
 
         /// <summary>Označení abortu vlákna, kterým trace funkce přeruší skript po překročení limitu kroků.</summary>

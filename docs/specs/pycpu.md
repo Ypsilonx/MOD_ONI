@@ -32,7 +32,8 @@ Analýza ONICPU (MIT, imengyu, poslední commit 2026-01):
      editor objeví nad ní.
    - Knihovna pro další hry: `Klei\OxygenNotIncluded\pycpu_library\`, tlačítka „Uložit do knihovny“ a
      „Načíst z knihovny“.
-   - UI ve hře je malé: skript, stav, log, hodnoty pinů a tlačítka výše. Editor ve hře (jako ONICPU)
+   - UI ve hře je malé: status itemy (stav, živé IN/OUT, tooltip s chybou a logem), plovoucí text po načtení,
+     tečky PROGRAM/ERROR a tlačítka výše (každé tlačítko = komponenta s `ISidescreenButtonControl`). Editor ve hře (jako ONICPU)
      zamítnut: velký a křehký kus UI, psaní kódu v něm je nepohodlné.
 4. **API skriptu:**
    ```python
@@ -44,6 +45,10 @@ Analýza ONICPU (MIT, imengyu, poslední commit 2026-01):
    def stop(io, storage): ...   # volitelné
    ```
    - `io.inp`/`io.out`: seznamy 4 čísel. Výstupy se ořežou na 32 bitů, bool je 0/1, float se ořízne.
+     Nezapsaný výstup drží poslední hodnotu.
+   - `io.sleep(n)`: uspí celé CPU na n ticků. `io.tick`: počet ticků od `start()` (i přeskočených), uložený
+     v savu; frekvenci jednotlivých pinů si skript řídí sám (`if io.tick % 5 == 0:`). Pevná frekvence 5 Hz,
+     rychlejší nemá smysl (logická síť se rychleji neobnovuje).
    - `storage`: dict uložený do savu (jen JSON typy, int max. 64 bitů).
    - Log drží posledních 20 řádků. Po první chybě skript stojí až do znovunačtení.
    - Sandbox chrání proti omylu, ne proti úmyslu: blokuje `import` mimo seznam a `open`/`input`/`exit`.

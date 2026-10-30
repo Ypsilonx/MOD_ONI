@@ -31,6 +31,15 @@ namespace PyCPU
         /// <summary>Posledních několik řádků z <c>io.log</c> a <c>print</c>, nejstarší první.</summary>
         string[] Logs { get; }
 
+        /// <summary>
+        /// Kolik dalších ticků chce skript přeskočit (<c>io.sleep(n)</c> v posledním volání), jinak 0.
+        /// Velké číslo (BigInteger v Pythonu) je int.MaxValue.
+        /// </summary>
+        int SleepTicks { get; }
+
+        /// <summary>Hodnota <c>io.tick</c> pro další volání: počet ticků od <c>start()</c> (nastavuje hra).</summary>
+        int TickCount { get; set; }
+
         /// <summary>Aktuální obsah <c>storage</c> jako JSON (pro uložení do savu).</summary>
         string StorageJson { get; }
 

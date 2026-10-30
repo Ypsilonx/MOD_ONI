@@ -31,6 +31,12 @@ namespace PyCPU.Scripting
         /// <inheritdoc />
         public string[] Logs => logs.ToArray();
 
+        /// <inheritdoc />
+        public int SleepTicks { get; private set; }
+
+        /// <inheritdoc />
+        public int TickCount { get; set; }
+
         /// <summary>Načte skript; chyby zapíše do <see cref="Error"/>.</summary>
         public PythonScript(PythonBackend backend, string name, string source, string storageJson)
         {
@@ -103,6 +109,9 @@ namespace PyCPU.Scripting
             {
                 ops.SetMember(io, "inp", ToList(inputs));
                 ops.SetMember(io, "out", ToList(outputs));
+                ops.SetMember(io, "skip", 0);
+                ops.SetMember(io, "tick", TickCount);
+                SleepTicks = 0;
                 if (backend.RunLimited(() => ops.Invoke(function, io, storage)))
                 {
                     FailStepLimit();
@@ -111,6 +120,7 @@ namespace PyCPU.Scripting
 
                 int[] result = ReadOutputs(ops.GetMember<object>(io, "out"), outputs.Length);
                 Array.Copy(result, outputs, outputs.Length);
+                SleepTicks = ops.GetMember<object>(io, "skip") is int skip ? skip : int.MaxValue;
             }
             catch (Exception e)
             {

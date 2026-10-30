@@ -15,6 +15,8 @@ namespace PyCPU
             "# PyCPU skript. Po uložení ho hra do 1 s načte znovu.\n" +
             "# io.inp[0..3]: vstupy, io.out[0..3]: výstupy (32bitová čísla), io.log(...): log.\n" +
             "# storage: dict, který se ukládá do savu (jen str/int/float/bool/None/list/dict).\n" +
+            "# io.sleep(n): přeskočí dalších n ticků (tick běží 5× za s, io.sleep(4) = jednou za sekundu).\n" +
+            "# io.tick: počet ticků od start(); např. if io.tick % 5 == 0: jen jednou za sekundu.\n" +
             "\n" +
             "def start(io, storage):\n" +
             "    pass\n" +
