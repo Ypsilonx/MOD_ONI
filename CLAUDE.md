@@ -41,6 +41,8 @@ platí pravidla níže.
 - Harmony brát ze hry (`Managed\0Harmony.dll`), ne z NuGetu. Cílit na framework hry (net48).
 - ID budovy `InfiniteGenerator` neměnit, rozbily by se savy.
 - Po každém updatu hry: přebuildovat a zkontrolovat log.
+- Assembly-CSharp má v globálním namespace vlastní typy `Action` (enum) a `DateTime`, které zastíní
+  systémové. V kódu modů psát `System.Action` a `System.DateTime` (generické `Action<T>` kolizi nemá).
 
 ## Body napojení
 

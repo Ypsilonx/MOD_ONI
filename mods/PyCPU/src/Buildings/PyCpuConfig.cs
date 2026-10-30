@@ -85,9 +85,10 @@ namespace PyCPU
             go.GetComponent<KPrefabID>().AddTag(GameTags.OverlayInFrontOfConduits);
         }
 
-        /// <summary>Přidá komponentu PyCpu k hotové budově.</summary>
+        /// <summary>Přidá k hotové budově přejmenování (název = soubor skriptu) a komponentu PyCpu.</summary>
         public override void DoPostConfigureComplete(GameObject go)
         {
+            go.AddOrGet<UserNameable>();
             go.AddOrGet<PyCpu>();
         }
     }
