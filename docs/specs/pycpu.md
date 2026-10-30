@@ -30,8 +30,14 @@ Analýza ONICPU (MIT, imengyu, poslední commit 2026-01):
    - Do savu se ukládá i kopie zdrojáku: save funguje i bez souborů, při načtení se soubor obnoví.
    - Tlačítko „Upravit ve VS Code“ spustí `code <soubor>`. Hra běží v režimu okna bez rámečku, takže se
      editor objeví nad ní.
-   - Knihovna pro další hry: `Klei\OxygenNotIncluded\pycpu_library\`, tlačítka „Uložit do knihovny“ a
-     „Načíst z knihovny“.
+   - Knihovna pro další hry: `Klei\OxygenNotIncluded\pycpu_library\`, tlačítko „Do knihovny“ (kopie, přepíše
+     stejnojmenný). Nahrání: výběr v herním panelu se seznamem (`INToggleSideScreenControl`) přepíše skript CPU
+     (původní upravená verze do koše), název CPU zůstane.
+   - Životní cyklus souboru (rozhodnuto 2026-10-30): nové CPU = `cpu_<id>.py` ze šablony; přejmenování CPU
+     soubor jen přejmenuje (obsah zůstane). Přejmenování na název, který používá jiné CPU, = připojení ke
+     sdílenému skriptu (sdílí se jen kód, běh a storage má každé CPU vlastní). Ze sdíleného souboru odchází
+     přejmenované CPU s kopií. Po rozebrání (a jen když skript nepoužívá jiné CPU) se nezměněná šablona smaže,
+     upravený skript jde do `pycpu\_smazane\`. Číslování `pumpa_1`… zamítnuto: zrušilo by sdílení.
    - UI ve hře je malé: status itemy (stav, živé IN/OUT, tooltip s chybou a logem), plovoucí text po načtení,
      tečky PROGRAM/ERROR a tlačítka výše (každé tlačítko = komponenta s `ISidescreenButtonControl`). Editor ve hře (jako ONICPU)
      zamítnut: velký a křehký kus UI, psaní kódu v něm je nepohodlné.

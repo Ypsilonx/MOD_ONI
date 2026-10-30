@@ -55,6 +55,19 @@ namespace PyCPU
         public override void OnSidescreenButtonPressed() => cpu.OpenInEditor();
     }
 
+    /// <summary>Tlačítko „Do knihovny“.</summary>
+    public class PyCpuLibraryButton : PyCpuButton
+    {
+        /// <inheritdoc />
+        public override string SidescreenButtonText => ModStrings.ButtonLibrary;
+
+        /// <inheritdoc />
+        public override string SidescreenButtonTooltip => ModStrings.ButtonLibraryTooltip;
+
+        /// <inheritdoc />
+        public override void OnSidescreenButtonPressed() => cpu.SaveToLibrary();
+    }
+
     /// <summary>Tlačítko „Restart“.</summary>
     public class PyCpuRestartButton : PyCpuButton
     {

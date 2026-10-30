@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization;
 using KSerialization;
@@ -32,6 +33,12 @@ namespace PyCPU
 
         /// <summary>Událost, kterou vyvolá UserNameable.SetName (parametr: nový název).</summary>
         private const int NameChangedEvent = 1102426921;
+
+        /// <summary>Událost dokončené dekonstrukce (Deconstructable.OnCompleteWork); při ukončení hry nepřijde.</summary>
+        private const int DeconstructedEvent = -702296337;
+
+        /// <summary>Všechna CPU ve hře (kvůli skriptům sdíleným víc budovami).</summary>
+        private static readonly HashSet<PyCpu> All = new HashSet<PyCpu>();
 
         /// <summary>Symboly teček PROGRAM a ERROR v animaci (převzaté z ONICPU).</summary>
         private static readonly KAnimHashedString ProgramDot = "dot_prog";
@@ -133,8 +140,94 @@ namespace PyCPU
             for (int i = 0; i < PyCpuConfig.PinCount; i++)
                 outputs[i] = ports.GetOutputValue(PyCpuConfig.OutputPortIds[i]);
             PyCpuStatusItems.Add(selectable, this);
-            Subscribe(NameChangedEvent, _ => OpenFile(announce: true));
+            All.Add(this);
+            Subscribe(DeconstructedEvent, _ => RetireFile());
+            Subscribe(NameChangedEvent, _ => OnRenamed());
             OpenFile(announce: false);
+        }
+
+        /// <summary>Vyřadí CPU z evidence (rozebrání i ukončení hry).</summary>
+        protected override void OnCleanUp()
+        {
+            All.Remove(this);
+            base.OnCleanUp();
+        }
+
+        /// <summary>Kolik CPU (včetně tohoto) běží na stejném souboru skriptu.</summary>
+        public int ShareCount => UsersOf(ScriptPath);
+
+        /// <summary>Počet CPU, která používají daný soubor skriptu.</summary>
+        private static int UsersOf(string path)
+        {
+            int count = 0;
+            foreach (PyCpu cpu in All)
+                if (path != null && string.Equals(cpu.ScriptPath, path, StringComparison.OrdinalIgnoreCase))
+                    count++;
+            return count;
+        }
+
+        /// <summary>
+        /// Přejmenování CPU. Když nový název už používá jiné CPU, připojí se k jeho (sdílenému) skriptu a svůj
+        /// starý uklidí. Jinak se soubor jen přejmenuje a obsah zůstane; sdílený soubor ostatním CPU zůstane
+        /// a toto CPU dostane kopii. Osiřelý soubor nového názvu (bez CPU) jde do koše.
+        /// </summary>
+        private void OnRenamed()
+        {
+            string newPath = ScriptFiles.PathFor(ScriptName);
+            if (file == null || string.Equals(file.Path, newPath, StringComparison.OrdinalIgnoreCase))
+                return;
+            string oldPath = file.Path;
+            bool oldShared = UsersOf(oldPath) > 1;
+            int targetUsers = UsersOf(newPath);
+            try
+            {
+                if (targetUsers > 0)
+                {
+                    RetireFile();
+                    OpenFile(announce: false);
+                    PopText(PopFXManager.Instance.sprite_Plus, string.Format(ModStrings.PopShared, targetUsers + 1));
+                    return;
+                }
+                if (File.Exists(newPath))
+                    Debug.Log($"{PyCpuMod.LogPrefix} {ScriptName}: osiřelý soubor stejného názvu {ScriptFiles.Retire(newPath)}");
+                // Odpojit dřív, než se soubor přesune, jinak by ho CheckFile obnovil.
+                file = null;
+                if (!oldShared && File.Exists(oldPath))
+                    File.Move(oldPath, newPath);
+                else
+                    new ScriptFile(newPath).Write(source ?? ScriptFiles.Template);
+                Debug.Log($"{PyCpuMod.LogPrefix} {ScriptName}: skript přejmenován ({oldPath} -> {newPath})");
+                OpenFile(announce: false);
+                PopText(PopFXManager.Instance.sprite_Plus, ModStrings.PopRenamed);
+            }
+            catch (Exception e)
+            {
+                FailHost($"Skript nejde přejmenovat: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Po rozebrání nebo připojení ke sdílenému skriptu uklidí vlastní soubor (<see cref="ScriptFiles.Retire"/>),
+        /// pokud ho nepoužívá jiné CPU.
+        /// </summary>
+        private void RetireFile()
+        {
+            if (file == null)
+                return;
+            string path = file.Path;
+            bool shared = UsersOf(path) > 1;
+            // Odpojit hned, jinak by CheckFile v dalším ticku smazaný soubor obnovil.
+            file = null;
+            if (shared)
+                return;
+            try
+            {
+                Debug.Log($"{PyCpuMod.LogPrefix} {ScriptName}: starý skript {ScriptFiles.Retire(path)}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"{PyCpuMod.LogPrefix} {ScriptName}: starý skript nejde uklidit: {e.Message}");
+            }
         }
 
         /// <summary>Před uložením savu převezme aktuální storage ze skriptu.</summary>
@@ -230,9 +323,54 @@ namespace PyCPU
             EditorLauncher.Open(file.Path, ScriptFiles.Folder());
         }
 
+        /// <summary>Zkopíruje aktuální skript do knihovny (stejnojmenný soubor přepíše).</summary>
+        public void SaveToLibrary()
+        {
+            try
+            {
+                if (file != null && !file.Exists)
+                    CheckFile();
+                string target = ScriptFiles.LibraryPathFor(ScriptName);
+                Directory.CreateDirectory(ScriptFiles.LibraryFolder());
+                File.Copy(file.Path, target, overwrite: true);
+                Debug.Log($"{PyCpuMod.LogPrefix} {ScriptName}: uloženo do knihovny ({target})");
+                PopText(PopFXManager.Instance.sprite_Plus, ModStrings.PopSavedToLibrary);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"{PyCpuMod.LogPrefix} {ScriptName}: do knihovny nejde uložit: {e.Message}");
+                PopText(PopFXManager.Instance.sprite_Negative, ModStrings.PopLibraryFailed);
+            }
+        }
+
         /// <summary>
-        /// Připojí soubor podle aktuálního názvu budovy. Existující soubor má přednost (tak lze víc CPU
-        /// pustit na jeden skript); chybějící se vytvoří z kopie v savu, u nové budovy ze šablony.
+        /// Přepíše skript tohoto CPU (a všech, která ho sdílejí) skriptem z knihovny. Původní upravenou verzi
+        /// zazálohuje do koše. Název CPU se nemění.
+        /// </summary>
+        /// <param name="name">Název skriptu v knihovně (bez .py).</param>
+        public void LoadFromLibrary(string name)
+        {
+            if (file == null)
+                return;
+            try
+            {
+                string text = File.ReadAllText(ScriptFiles.LibraryPathFor(name));
+                ScriptFiles.Backup(file.Path);
+                file.Write(text);
+                Debug.Log($"{PyCpuMod.LogPrefix} {ScriptName}: načteno z knihovny ({name}.py)");
+                LoadScript(text, announce: false);
+                if (Error == null)
+                    PopText(PopFXManager.Instance.sprite_Plus, string.Format(ModStrings.PopFromLibrary, name));
+            }
+            catch (Exception e)
+            {
+                FailHost($"Skript z knihovny nejde načíst: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Připojí soubor podle aktuálního názvu budovy: existující soubor načte (i sdílený jiným CPU),
+        /// chybějící vytvoří z kopie v savu, u nové budovy ze šablony.
         /// </summary>
         /// <param name="announce">Ukázat nad budovou potvrzení „skript načten“ (ne při načítání savu).</param>
         private void OpenFile(bool announce)
@@ -243,13 +381,11 @@ namespace PyCPU
                 if (file.Exists)
                 {
                     LoadScript(file.Read(), announce);
+                    return;
                 }
-                else
-                {
-                    string text = string.IsNullOrEmpty(source) ? ScriptFiles.Template : source;
-                    file.Write(text);
-                    LoadScript(text, announce);
-                }
+                string text = string.IsNullOrEmpty(source) ? ScriptFiles.Template : source;
+                file.Write(text);
+                LoadScript(text, announce);
             }
             catch (Exception e)
             {

@@ -92,6 +92,8 @@ namespace PyCPU
             go.AddOrGet<PyCpu>();
             go.AddOrGet<PyCpuEditButton>();
             go.AddOrGet<PyCpuRestartButton>();
+            go.AddOrGet<PyCpuLibraryButton>();
+            go.AddOrGet<PyCpuLibraryPicker>();
         }
     }
 }

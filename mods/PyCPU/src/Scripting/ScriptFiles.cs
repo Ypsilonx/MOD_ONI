@@ -37,6 +37,16 @@ namespace PyCPU
             return Path.Combine(colony, FolderName);
         }
 
+        /// <summary>
+        /// Knihovna skriptů sdílená všemi koloniemi: <c>Klei\OxygenNotIncluded\pycpu_library\</c>.
+        /// Skript z ní se do CPU nahraje výběrem v panelu (přepíše skript CPU, název CPU zůstane).
+        /// </summary>
+        public static string LibraryFolder() => Path.Combine(Util.RootFolder(), "pycpu_library");
+
+        /// <summary>Plná cesta ke skriptu v knihovně pro daný název budovy.</summary>
+        public static string LibraryPathFor(string buildingName) =>
+            Path.Combine(LibraryFolder(), SanitizeName(buildingName) + ".py");
+
         /// <summary>Plná cesta ke skriptu pro daný název budovy.</summary>
         public static string PathFor(string buildingName) => Path.Combine(Folder(), SanitizeName(buildingName) + ".py");
 
@@ -48,6 +58,52 @@ namespace PyCPU
                 sb.Replace(c, '_');
             string result = sb.ToString().Trim('.', ' ');
             return result.Length == 0 ? "cpu" : result;
+        }
+
+        /// <summary>Podsložka koše (ve složce skriptů kolonie) pro skripty rozebraných CPU.</summary>
+        public const string TrashFolderName = "_smazane";
+
+        /// <summary>
+        /// Uklidí skript, který už žádné CPU nepoužívá: nezměněnou šablonu smaže, upravený skript přesune do koše
+        /// (při kolizi názvu s časovou značkou), aby rozebrání omylem nesmazalo kód.
+        /// </summary>
+        /// <param name="path">Plná cesta ke skriptu.</param>
+        /// <returns>Popis, co se se souborem stalo (pro log).</returns>
+        public static string Retire(string path)
+        {
+            if (!File.Exists(path))
+                return "soubor neexistuje";
+            if (IsTemplate(path))
+            {
+                File.Delete(path);
+                return "šablona smazána";
+            }
+            string target = TrashPathFor(path);
+            File.Move(path, target);
+            return "přesunuto do " + target;
+        }
+
+        /// <summary>Zkopíruje upravený skript do koše (před přepsáním z knihovny); šablonu nezálohuje.</summary>
+        /// <param name="path">Plná cesta ke skriptu.</param>
+        public static void Backup(string path)
+        {
+            if (File.Exists(path) && !IsTemplate(path))
+                File.Copy(path, TrashPathFor(path));
+        }
+
+        /// <summary>True, když soubor obsahuje nezměněnou šablonu.</summary>
+        private static bool IsTemplate(string path) => File.ReadAllText(path).Replace("\r\n", "\n") == Template;
+
+        /// <summary>Volná cesta v koši pro daný skript (při kolizi s časovou značkou); koš vytvoří.</summary>
+        private static string TrashPathFor(string path)
+        {
+            string trash = Path.Combine(Path.GetDirectoryName(path), TrashFolderName);
+            Directory.CreateDirectory(trash);
+            string target = Path.Combine(trash, Path.GetFileName(path));
+            if (File.Exists(target))
+                target = Path.Combine(trash,
+                    $"{Path.GetFileNameWithoutExtension(path)}_{System.DateTime.Now:yyyyMMdd_HHmmss}.py");
+            return target;
         }
     }
 

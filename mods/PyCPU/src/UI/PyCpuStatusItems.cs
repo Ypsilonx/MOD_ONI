@@ -72,6 +72,9 @@ namespace PyCPU
         {
             var sb = new StringBuilder();
             sb.Append(cpu.ScriptPath);
+            int shared = cpu.ShareCount;
+            if (shared > 1)
+                sb.Append('\n').Append(string.Format(ModStrings.SharedInfo, shared));
             if (cpu.Error != null)
                 sb.Append("\n\n").Append(STRINGS.UI.FormatAsKeyWord(ModStrings.StateError)).Append('\n').Append(cpu.Error);
             string[] logs = cpu.Logs;

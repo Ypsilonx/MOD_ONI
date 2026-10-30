@@ -20,14 +20,16 @@ vedle savu, editace ve VS Code. Spec: `docs/specs/pycpu.md`.
   ověřen ve hře včetně limitu kroků (`Thread.Abort` na Unity Mono funguje). Textura: popisky IN/OUT/RUN, „Python“.
 - PyCPU task 4a ověřen ve hře: stav a živé IN/OUT v detailu budovy, potvrzení po načtení, tečky PROGRAM/ERROR,
   tlačítka VS Code a Restart, `io.sleep`, `io.tick` (28 testů).
+- PyCPU task 4b ověřen ve hře: `cpu_<id>.py` se přejmenuje spolu s CPU, stejný název = sdílený skript,
+  knihovna `Klei\OxygenNotIncluded\pycpu_library` (tlačítko „Do knihovny“, výběr v panelu), koš `pycpu\_smazane`.
 
 ## Rozpracováno
 
-- PyCPU podle `docs/plans/2026-10-29-pycpu.md`, další je task 4b (knihovna skriptů).
+- PyCPU podle `docs/plans/2026-10-29-pycpu.md`, další je task 5 (nápověda a příklady).
 
 ## Další krok
 
-1. PyCPU task 4b, pak task 5 (nápověda a příklady vč. `io.tick % n` pro jednotlivé piny). Varování „not added to plan screen subcategory“ (BuildingTuning) zatím neřešeno.
+1. PyCPU task 5 (nápověda a příklady vč. `io.tick % n` pro jednotlivé piny). Varování „not added to plan screen subcategory“ (BuildingTuning) zatím neřešeno.
 2. Malý mod, který při startu hry odstraní atribut jen pro čtení ze složek modů (viz níže).
 3. Nástroje do `tools/`: filtr Player.log a kontrola kompatibility z auditu.
 4. Skill `oni-mod`.
