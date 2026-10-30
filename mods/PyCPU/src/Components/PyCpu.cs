@@ -68,6 +68,8 @@ namespace PyCPU
         protected override void OnSpawn()
         {
             base.OnSpawn();
+            // Animace (převzatá z ONICPU) má dva štítky jazyka přes sebe; oba jsou „Python“, druhý stačí skrýt.
+            animController.SetSymbolVisiblity("lang_1", false);
             if (string.IsNullOrEmpty(nameable.savedName) || nameable.savedName == ModStrings.Name)
                 nameable.SetName("cpu_" + prefabId.InstanceID);
             // Hodnoty výstupů ukládá LogicPorts sám; skript na ně po načtení navazuje.
