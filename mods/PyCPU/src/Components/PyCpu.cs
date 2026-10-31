@@ -320,6 +320,14 @@ namespace PyCPU
                 return;
             if (!file.Exists)
                 CheckFile();
+            try
+            {
+                ScriptFiles.InstallHelp(ScriptFiles.Folder());
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"{PyCpuMod.LogPrefix} Nápovědu nejde zkopírovat: {e.Message}");
+            }
             EditorLauncher.Open(file.Path, ScriptFiles.Folder());
         }
 

@@ -24,4 +24,9 @@
     <ProjectReference Include="..\..\mods\PyCPU\PyCPU.csproj" />
     <Reference Include="Newtonsoft.Json" HintPath="$(ManagedDir)\Newtonsoft.Json.dll" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- Ukázkové skripty modu (ExampleScriptsTests ověřuje, že běží). -->
+    <None Include="..\..\mods\PyCPU\mod\examples\*.py" LinkBase="examples" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

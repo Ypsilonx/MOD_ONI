@@ -17,12 +17,44 @@ namespace PyCPU
             "# storage: dict, který se ukládá do savu (jen str/int/float/bool/None/list/dict).\n" +
             "# io.sleep(n): přeskočí dalších n ticků (tick běží 5× za s, io.sleep(4) = jednou za sekundu).\n" +
             "# io.tick: počet ticků od start(); např. if io.tick % 5 == 0: jen jednou za sekundu.\n" +
+            "# Celá nápověda: NAPOVEDA.md v této složce.\n" +
             "\n" +
             "def start(io, storage):\n" +
             "    pass\n" +
             "\n" +
             "def tick(io, storage):\n" +
             "    io.out[0] = io.inp[0]\n";
+
+        /// <summary>Název souboru nápovědy, který se kopíruje z modu vedle skriptů kolonie.</summary>
+        public const string HelpFileName = "NAPOVEDA.md";
+
+        /// <summary>Složka nainstalovaného modu (nastaví <see cref="PyCpuMod.OnLoad"/>).</summary>
+        public static string ModFolder { get; internal set; }
+
+        /// <summary>
+        /// Nakopíruje ukázkové skripty z <c>examples\</c> modu do knihovny. Existující soubory nepřepisuje,
+        /// aby úpravy hráče zůstaly; smazaný příklad se tak po dalším startu hry vrátí.
+        /// </summary>
+        public static void InstallExamples()
+        {
+            string source = Path.Combine(ModFolder, "examples");
+            string target = LibraryFolder();
+            Directory.CreateDirectory(target);
+            foreach (string file in Directory.GetFiles(source, "*.py"))
+            {
+                string dest = Path.Combine(target, Path.GetFileName(file));
+                if (!File.Exists(dest))
+                    File.Copy(file, dest);
+            }
+        }
+
+        /// <summary>Zkopíruje nápovědu (README modu) do složky skriptů; vždy přepíše, ať odpovídá verzi modu.</summary>
+        /// <param name="folder">Složka skriptů kolonie.</param>
+        public static void InstallHelp(string folder)
+        {
+            Directory.CreateDirectory(folder);
+            File.Copy(Path.Combine(ModFolder, "README.md"), Path.Combine(folder, HelpFileName), overwrite: true);
+        }
 
         /// <summary>Kódování zapisovaných souborů (UTF-8 bez BOM, jak ho čeká VS Code).</summary>
         internal static readonly Encoding Utf8 = new UTF8Encoding(false);
