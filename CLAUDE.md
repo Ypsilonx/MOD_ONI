@@ -4,64 +4,44 @@ Vlastní mody do hry Oxygen Not Included (C#, Harmony), každý v `mods/<ModName
 - **InfiniteGenerator**: generátor elektřiny bez vstupů, hotový a odložený; vzor jednoduchého modu.
 - **PyCPU**: programovatelné IO zařízení se skripty v Pythonu (IronPython), ve vývoji, viz `docs/specs/pycpu.md`.
 
-Velikost: M.
-
-Doména: zatím bez L1 skillu. Skill `oni-mod` vznikne ve fázi 3 (viz `STATUS.md`), do té doby
-platí pravidla níže.
+Velikost: M. Doména: skill `oni-mod` (struktura, ověřování ve hře, body napojení, pasti). Tento projekt je
+pro skill referenční implementace: nový obecný poznatek o ONI zapsat do skillu, sem jen projektové věci.
 
 ## Spuštění a ověření
 
-- Build + nasazení: `dotnet build` (celé řešení) nebo `dotnet build mods\<ModName>`. Target `DeployMod`
-  zkopíruje DLL a obsah `mod/` do `<ModsDir>\Dev\<ModName>\`
-  (`%USERPROFILE%\OneDrive\Dokumenty\Klei\OxygenNotIncluded\mods\Dev\<ModName>\`). Když hra běží, build skončí chybou.
-- **Po každém commitu udělat kopii do hry:** spustit `dotnet build`, tím se mod zkopíruje do složky modů
-  v OneDrive výše. Hra čte jen tuhle kopii, takže bez buildu po commitu hraje starou verzi modu.
-- Ověření ve hře: mod z `Dev\` je po prvním nasazení vypnutý, zapnout v menu Mods. Pak projít
-  `%USERPROFILE%\AppData\LocalLow\Klei\Oxygen Not Included\Player.log` (řádky `[<ModName>]`, `Loading MOD dll`, výjimky). Mod, který shodí hru, hra sama vypne
-  (`crash_count` v `mods\mods.json`).
+- Build + nasazení: `dotnet build` (celé řešení) nebo `dotnet build mods\<ModName>`. Kopíruje do
+  `%USERPROFILE%\OneDrive\Dokumenty\Klei\OxygenNotIncluded\mods\Dev\<ModName>\`. Když hra běží, build skončí chybou.
+- **Po každém commitu spustit `dotnet build`**, ať je kopie ve hře aktuální. Hra čte jen tuhle kopii.
+- Testy (Python host PyCPU, bez hry): `dotnet test tests\PyCPU.Scripting.Tests`.
+- Ověření ve hře a čtení `Player.log`: viz skill `oni-mod` → Ověřování.
 
 ## Mapa projektu
 
-- `Directory.Build.props`: cesty (hra, složka modů) a společné nastavení (net48). Uprav tady.
-- `Directory.Build.targets`: reference na DLL hry, nasazení `DeployMod`. Nepřibaluje DLL, které hra už má
-  (`System.Memory`…). Mod může vyřadit další DLL přes `<ModDllExclude Include="X.dll" />`.
-- `mods/<ModName>/<ModName>.csproj`: jen `ModName` a vlastní závislosti.
-- Struktura modu: `src/Mod.cs` (`UserMod2`), `src/Buildings/` (`IBuildingConfig`), `src/Components/`,
-  `src/Patches/` (Harmony), `mod/` (`mod.yaml` s názvem a staticID, `mod_info.yaml` s buildem a APIVersion;
-  DLC přes `requiredDlcIds`/`forbiddenDlcIds`, `supportedContent` je zastaralé).
-- Komponenty, které se ukládají do savu (`InfiniteGeneratorController`), nepřejmenovávat a neměnit jim namespace,
-  protože hra je ukládá pod plným jménem typu.
-- `animace_názvy.txt`: výpis dostupných animací generátorů ze hry (podklad pro volbu `anim`).
-- `docs/mods-audit.md`: audit modů nainstalovaných ve hře a příčina pádů (OneDrive).
-- `docs/specs/`: návrhy (spec PyCPU). `docs/plans/`: aktuální plán.
+- `Directory.Build.props`: cesty (hra, `ModsDir`) a společné nastavení (net48). **Cesty upravit tady.**
+- `Directory.Build.targets`: reference na DLL hry, `StripModDlls`, nasazení `DeployMod`
+  (druhy projektů `ModName` / `ModLibOf`, popsáno v hlavičce souboru).
+- `mods/InfiniteGenerator/`: budova, posuvník výkonu, patch `Generator.WattageRating`, tech strom.
+- `mods/PyCPU/`: herní část (budova, porty, boční panel, soubory skriptů). Na IronPython neodkazuje.
+- `mods/PyCPU.Scripting/` → `lib\`: IronPython host, sandbox, limit kroků, `storage`.
+- `tests/PyCPU.Scripting.Tests/`: xUnit testy hostu. `tools/DllStripper/`: ořezání `Microsoft.Dynamic.dll`.
+- `animace_názvy.txt`: výpis animací generátorů ze hry (podklad pro volbu `anim`).
+- `docs/specs/pycpu.md`: návrh PyCPU. `docs/plans/`: aktuální plán.
 
 ## Rozhodnutí a pravidla tohoto projektu
 
 - Hra: Steam, `<Steam>\steamapps\common\OxygenNotIncluded`, Unity 6, DLC Spaced Out + další.
-- Složka modů hry `Dokumenty\Klei\OxygenNotIncluded\mods` (Dokumenty jsou v OneDrive) je **skutečná
-  složka v OneDrive**, nastavená na „Vždy ponechat na tomto zařízení“. Junction na `<složka mimo OneDrive>` byl
-  zrušen 2026-10-31, protože OneDrive junctiony a symlinky neumí synchronizovat. `<složka mimo OneDrive>` je
-  už jen stará kopie, kterou nic nepoužívá.
-- Vlastní mody jdou do `mods\Dev\<ModName>\`, cizí mody jen ze Steam Workshopu (žádné lokální kopie).
-- Harmony brát ze hry (`Managed\0Harmony.dll`), ne z NuGetu. Cílit na framework hry (net48).
-- ID budovy `InfiniteGenerator` neměnit, rozbily by se savy.
-- Po každém updatu hry: přebuildovat a zkontrolovat log.
-- Assembly-CSharp má v globálním namespace vlastní typy `Action` (enum) a `DateTime`, které zastíní
-  systémové. V kódu modů psát `System.Action` a `System.DateTime` (generické `Action<T>` kolizi nemá).
+- Složka modů je **skutečná složka v OneDrive**, build do ní kopíruje. Junction na `<složka mimo OneDrive>` byl zrušen
+  2026-10-31, protože ho OneDrive nesynchronizoval. `<složka mimo OneDrive>` je stará kopie, nic ji nepoužívá.
+- ID budov `InfiniteGenerator` a `PyCPU` a typy v savu (`InfiniteGeneratorController` v globálním namespace,
+  `PyCPU.PyCpu`) neměnit.
+- PyCPU: skripty `save_files\<kolonie>\pycpu\<název budovy>.py`, knihovna `Klei\OxygenNotIncluded\pycpu_library`.
 
-## Body napojení
+## Body napojení (navíc ke skillu)
 
 | Vstupní bod | Co dělá | Na co si dát pozor |
 |---|---|---|
-| `KMod.UserMod2.OnLoad(Harmony)` | start modu, `base.OnLoad` aplikuje `[HarmonyPatch]` třídy | běží velmi brzy, `Db` ani `Assets` ještě neexistují |
-| `GeneratedBuildings.LoadGeneratedBuildings` (prefix) | `Strings.Add`, `ModUtil.AddBuildingToPlanScreen` | hra `IBuildingConfig` z modů registruje **sama**, ruční `RegisterBuilding` vede k duplicitě (`duplicate tag` v logu) |
-| `IBuildingConfig` | definice budovy | ID budovy neměnit (savy) |
-| `Db.Initialize` (postfix) | tech strom | ID technologií se mezi updaty mění |
-| `[SerializationConfig(OptIn)]` + `[Serialize]` | stav komponenty v savu | bez toho se hodnota po načtení vrátí na výchozí; typ se ukládá pod plným jménem |
-| `ISim200ms.Sim200ms(dt)` | periodická logika | volá se pro každou instanci, reflexi cachovat |
-| `mod_info.yaml` | `minimumSupportedBuild`, `APIVersion: 2`, `requiredDlcIds`/`forbiddenDlcIds` | `supportedContent` je zastaralé; `APIVersion` ≠ 2 → DLL se nenačte |
-
-Testování ve hře: sandbox (`Shift+S`), debug režim přes prázdný `OxygenNotIncluded_Data\debug_enable.txt`
-(`Backspace` zap/vyp, `Ctrl+F4` okamžité stavění, `Ctrl+F2` spawn dupliňáka). Konzole s příkazy ve hře není.
+| `LibResolver.Register()` v `OnLoad` | `AssemblyResolve` na `lib\` | musí proběhnout před prvním použitím `ScriptBackendLoader` |
+| `ScriptBackendLoader.Get()` | načte `lib\PyCPU.Scripting.dll` | nikdy před `Assets.OnPrefabInit`; první vytvoření enginu ~0,6 s |
+| `IScriptBackend` / `IScriptInstance` | jediné rozhraní mezi `PyCPU.dll` a Pythonem | Python volat jen ze `Sim200ms` (hlavní vlákno), engine není thread-safe |
 
 Stav práce: viz `STATUS.md`.

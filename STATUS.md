@@ -11,6 +11,7 @@ vedle savu, editace ve VS Code. Spec: `docs/specs/pycpu.md`.
 
 - Audit modů, mody jen ze Steamu. Složka modů je od 2026-10-31 skutečná složka v OneDrive,
   build nasazuje přímo tam.
+- Skill `oni-mod` (2026-10-31): obecná pravidla a pasti ONI přesunuté z tohoto projektu.
 - Repo pro víc modů (`mods/<Mod>/`), společný build s nasazením (`Directory.Build.props/.targets`).
 - InfiniteGenerator 1.2.0: hotový, odložený (hra má vlastní DEV generátor).
 - **Spike PyCPU úspěšný ve hře:** IronPython běží, limit kroků funguje, tick ~1–5 µs.
@@ -32,21 +33,16 @@ vedle savu, editace ve VS Code. Spec: `docs/specs/pycpu.md`.
 
 1. PyCPU task 5 (nápověda a příklady vč. `io.tick % n` pro jednotlivé piny). Varování „not added to plan screen subcategory“ (BuildingTuning) zatím neřešeno.
 2. Malý mod, který při startu hry odstraní atribut jen pro čtení ze složek modů (viz níže).
-3. Nástroje do `tools/`: filtr Player.log a kontrola kompatibility z auditu.
-4. Skill `oni-mod`.
+3. Nástroje do `tools/`: filtr Player.log a kontrola kompatibility modů (dekompilace přes ilspycmd,
+   porovnání cílů Harmony patchů s aktuální `Assembly-CSharp.dll`).
 
 ## Otevřené otázky / slepé uličky
 
-- Atribut jen pro čtení na složkách modů: nastavuje ho hra při rozbalování modu ze Steamu (potvrzeno na
-  modu 3244925649). Brání pak smazání nebo aktualizaci modu. Ručně odstraněn, u nových modů se vrací.
-- ❌ Složka modů jako junction na `<složka mimo OneDrive>`: OneDrive junctiony/symlinky nesynchronizuje a hlásí
-  chyby. Vráceno na skutečnou složku v OneDrive. Kdyby se zase objevily problémy s aktualizacemi
-  modů (atribut jen pro čtení), je to známá cena za to.
-- ❌ IronPython knihovny v kořeni složky modu: hra na nich volá `GetTypes()` → pád na System.Xaml.
-- ❌ IronPython typy kdekoli v `PyCPU.dll` (i pole lambdy): Mono je načítá už při `GetTypes`, dřív než `OnLoad`.
+Obecné slepé uličky ONI (junction v OneDrive, `GetTypes` na knihovnách, `BigInteger`, průhledné textury,
+lokální kopie cizích modů…) jsou ve skillu `oni-mod` → Pasti. Tady jen projektové:
+
+- Atribut jen pro čtení na složkách modů ze Steamu se u nových modů vrací (potvrzeno na modu 3244925649),
+  zatím ručně. Řešením by byl bod 2 výše.
 - ❌ Limit kroků výjimkou z trace funkce: `try/except` ve skriptu ji spolkne a IronPython pak trace vypne
   (smyčka běží dál). Řešeno `Thread.CurrentThread.Abort` + `ResetAbort` v `PythonBackend.RunLimited`.
-- ❌ `BigInteger` v JSON: Newtonsoft ve hře ho nepodporuje, storage je omezené na 64bitová čísla.
-- Popisky na desce kreslit neprůhledně: průhledná místa textury ve hře ukazují zelenou vrstvu pod deskou.
 - ❌ Reflexe na `Generator.wattageRating` / `animSpeed`: v Unity 6 verzi hry neexistují.
-- ❌ Lokální kopie PeterHanových modů: samy se neaktualizují. Brát ze Steamu.
