@@ -3,8 +3,8 @@
   <PropertyGroup>
     <GameDir><Steam>\steamapps\common\OxygenNotIncluded</GameDir>
     <ManagedDir>$(GameDir)\OxygenNotIncluded_Data\Managed</ManagedDir>
-    <!-- Junction z Dokumenty\Klei\OxygenNotIncluded\mods vede sem (mimo OneDrive). -->
-    <ModsDir><složka mimo OneDrive></ModsDir>
+    <!-- Skutečná složka modů hry v OneDrive (junction OneDrive nesynchronizoval, viz CLAUDE.md). -->
+    <ModsDir>%USERPROFILE%\OneDrive\Dokumenty\Klei\OxygenNotIncluded\mods</ModsDir>
 
     <!-- Hra běží na Unity 6 (Mono s API .NET Framework 4.8). -->
     <TargetFramework>net48</TargetFramework>

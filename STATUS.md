@@ -1,6 +1,6 @@
 # Stav projektu
 
-Aktualizováno: 2026-10-30
+Aktualizováno: 2026-10-31
 
 ## Cíl
 
@@ -9,7 +9,8 @@ vedle savu, editace ve VS Code. Spec: `docs/specs/pycpu.md`.
 
 ## Hotovo
 
-- Audit modů, složka modů jako junction na `<složka mimo OneDrive>`, mody jen ze Steamu.
+- Audit modů, mody jen ze Steamu. Složka modů je od 2026-10-31 skutečná složka v OneDrive,
+  build nasazuje přímo tam.
 - Repo pro víc modů (`mods/<Mod>/`), společný build s nasazením (`Directory.Build.props/.targets`).
 - InfiniteGenerator 1.2.0: hotový, odložený (hra má vlastní DEV generátor).
 - **Spike PyCPU úspěšný ve hře:** IronPython běží, limit kroků funguje, tick ~1–5 µs.
@@ -38,6 +39,9 @@ vedle savu, editace ve VS Code. Spec: `docs/specs/pycpu.md`.
 
 - Atribut jen pro čtení na složkách modů: nastavuje ho hra při rozbalování modu ze Steamu (potvrzeno na
   modu 3244925649). Brání pak smazání nebo aktualizaci modu. Ručně odstraněn, u nových modů se vrací.
+- ❌ Složka modů jako junction na `<složka mimo OneDrive>`: OneDrive junctiony/symlinky nesynchronizuje a hlásí
+  chyby. Vráceno na skutečnou složku v OneDrive. Kdyby se zase objevily problémy s aktualizacemi
+  modů (atribut jen pro čtení), je to známá cena za to.
 - ❌ IronPython knihovny v kořeni složky modu: hra na nich volá `GetTypes()` → pád na System.Xaml.
 - ❌ IronPython typy kdekoli v `PyCPU.dll` (i pole lambdy): Mono je načítá už při `GetTypes`, dřív než `OnLoad`.
 - ❌ Limit kroků výjimkou z trace funkce: `try/except` ve skriptu ji spolkne a IronPython pak trace vypne

@@ -12,7 +12,10 @@ platí pravidla níže.
 ## Spuštění a ověření
 
 - Build + nasazení: `dotnet build` (celé řešení) nebo `dotnet build mods\<ModName>`. Target `DeployMod`
-  zkopíruje DLL a obsah `mod/` do `<složka mimo OneDrive>\Dev\<ModName>\`. Když hra běží, build skončí chybou.
+  zkopíruje DLL a obsah `mod/` do `<ModsDir>\Dev\<ModName>\`
+  (`%USERPROFILE%\OneDrive\Dokumenty\Klei\OxygenNotIncluded\mods\Dev\<ModName>\`). Když hra běží, build skončí chybou.
+- **Po každém commitu udělat kopii do hry:** spustit `dotnet build`, tím se mod zkopíruje do složky modů
+  v OneDrive výše. Hra čte jen tuhle kopii, takže bez buildu po commitu hraje starou verzi modu.
 - Ověření ve hře: mod z `Dev\` je po prvním nasazení vypnutý, zapnout v menu Mods. Pak projít
   `%USERPROFILE%\AppData\LocalLow\Klei\Oxygen Not Included\Player.log` (řádky `[<ModName>]`, `Loading MOD dll`, výjimky). Mod, který shodí hru, hra sama vypne
   (`crash_count` v `mods\mods.json`).
@@ -35,8 +38,10 @@ platí pravidla níže.
 ## Rozhodnutí a pravidla tohoto projektu
 
 - Hra: Steam, `<Steam>\steamapps\common\OxygenNotIncluded`, Unity 6, DLC Spaced Out + další.
-- Složka modů hry `Dokumenty\Klei\OxygenNotIncluded\mods` (Dokumenty jsou v OneDrive) je **junction
-  na `<složka mimo OneDrive>`**. Důvod: OneDrive zamykal složky modů a hra nemohla mody aktualizovat (viz audit).
+- Složka modů hry `Dokumenty\Klei\OxygenNotIncluded\mods` (Dokumenty jsou v OneDrive) je **skutečná
+  složka v OneDrive**, nastavená na „Vždy ponechat na tomto zařízení“. Junction na `<složka mimo OneDrive>` byl
+  zrušen 2026-10-31, protože OneDrive junctiony a symlinky neumí synchronizovat. `<složka mimo OneDrive>` je
+  už jen stará kopie, kterou nic nepoužívá.
 - Vlastní mody jdou do `mods\Dev\<ModName>\`, cizí mody jen ze Steam Workshopu (žádné lokální kopie).
 - Harmony brát ze hry (`Managed\0Harmony.dll`), ne z NuGetu. Cílit na framework hry (net48).
 - ID budovy `InfiniteGenerator` neměnit, rozbily by se savy.
