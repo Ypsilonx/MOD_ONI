@@ -34,8 +34,7 @@ vedle savu, editace ve VS Code. Spec: `docs/specs/pycpu.md`.
 ## Další krok
 
 1. PyCPU task 6: nezávislá revize kódu. Varování „not added to plan screen subcategory“ (BuildingTuning) zatím neřešeno.
-2. Malý mod, který při startu hry odstraní atribut jen pro čtení ze složek modů (viz níže).
-3. Nástroje do `tools/`: filtr Player.log a kontrola kompatibility modů (dekompilace přes ilspycmd,
+2. Nástroje do `tools/`: filtr Player.log a kontrola kompatibility modů (dekompilace přes ilspycmd,
    porovnání cílů Harmony patchů s aktuální `Assembly-CSharp.dll`).
 
 ## Otevřené otázky / slepé uličky
@@ -43,8 +42,9 @@ vedle savu, editace ve VS Code. Spec: `docs/specs/pycpu.md`.
 Obecné slepé uličky ONI (junction v OneDrive, `GetTypes` na knihovnách, `BigInteger`, průhledné textury,
 lokální kopie cizích modů…) jsou ve skillu `oni-mod` → Pasti. Tady jen projektové:
 
-- Atribut jen pro čtení na složkách modů ze Steamu se u nových modů vrací (potvrzeno na modu 3244925649),
-  zatím ručně. Řešením by byl bod 2 výše.
+- Atribut jen pro čtení na složkách `mods\Steam\<id>` (2026-10-31: 1 z 12 složek, žádný soubor): nastavuje ho
+  nejspíš OneDrive, ne hra. Blokuje jen smazání složky (aktualizace modu). Rozhodnuto: řešit ručně `attrib -R /S /D`,
+  až nastane. ❌ Mod na opravu zamítnut: aktualizace modů proběhne při startu dřív, než by jeho kód běžel.
 - ❌ Limit kroků výjimkou z trace funkce: `try/except` ve skriptu ji spolkne a IronPython pak trace vypne
   (smyčka běží dál). Řešeno `Thread.CurrentThread.Abort` + `ResetAbort` v `PythonBackend.RunLimited`.
 - ❌ Reflexe na `Generator.wattageRating` / `animSpeed`: v Unity 6 verzi hry neexistují.
