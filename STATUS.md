@@ -24,14 +24,16 @@ vedle savu, editace ve VS Code. Spec: `docs/specs/pycpu.md`.
   tlačítka VS Code a Restart, `io.sleep`, `io.tick` (28 testů).
 - PyCPU task 4b ověřen ve hře: `cpu_<id>.py` se přejmenuje spolu s CPU, stejný název = sdílený skript,
   knihovna `Klei\OxygenNotIncluded\pycpu_library` (tlačítko „Do knihovny“, výběr v panelu), koš `pycpu\_smazane`.
+- PyCPU task 5 přijat (doladí se podle používání): `mod/README.md` (nápověda, kopíruje se jako `NAPOVEDA.md` do `pycpu\`
+  při „Upravit ve VS Code“), 3 příklady `mod/examples/priklad_*.py` → knihovna při startu (nepřepisuje), 34 testů.
 
 ## Rozpracováno
 
-- PyCPU podle `docs/plans/2026-10-29-pycpu.md`, další je task 5 (nápověda a příklady).
+- PyCPU podle `docs/plans/2026-10-29-pycpu.md`: zbývá task 6 (nezávislá revize kódu), pak 1.0.
 
 ## Další krok
 
-1. PyCPU task 5 (nápověda a příklady vč. `io.tick % n` pro jednotlivé piny). Varování „not added to plan screen subcategory“ (BuildingTuning) zatím neřešeno.
+1. PyCPU task 6: nezávislá revize kódu. Varování „not added to plan screen subcategory“ (BuildingTuning) zatím neřešeno.
 2. Malý mod, který při startu hry odstraní atribut jen pro čtení ze složek modů (viz níže).
 3. Nástroje do `tools/`: filtr Player.log a kontrola kompatibility modů (dekompilace přes ilspycmd,
    porovnání cílů Harmony patchů s aktuální `Assembly-CSharp.dll`).
