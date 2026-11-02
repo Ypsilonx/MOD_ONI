@@ -2,3 +2,7 @@ bin/
 obj/
 .vs/
 *.user
+Directory.Build.user.props
+
+# Pracovní poznámky a lokální podklady (zůstávají jen na disku)
+animace_názvy.txt

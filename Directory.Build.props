@@ -1,10 +1,19 @@
 <Project>
-  <!-- Společné nastavení všech modů v mods/*. Cesty uprav tady, když se hra nebo složka modů přesune. -->
+  <!--
+    Společné nastavení všech modů v mods/*.
+    Vlastní cesty (jiný disk se Steamem, jiná složka Dokumentů) nastav v Directory.Build.user.props
+    vedle tohoto souboru (není v gitu), vzor je v README. Jde to i parametrem: dotnet build -p:GameDir=...
+  -->
+  <Import Project="Directory.Build.user.props" Condition="Exists('$(MSBuildThisFileDirectory)Directory.Build.user.props')" />
+
   <PropertyGroup>
-    <GameDir><Steam>\steamapps\common\OxygenNotIncluded</GameDir>
+    <GameDir Condition="'$(GameDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\OxygenNotIncluded</GameDir>
     <ManagedDir>$(GameDir)\OxygenNotIncluded_Data\Managed</ManagedDir>
-    <!-- Skutečná složka modů hry v OneDrive (junction OneDrive nesynchronizoval, viz CLAUDE.md). -->
-    <ModsDir>%USERPROFILE%\OneDrive\Dokumenty\Klei\OxygenNotIncluded\mods</ModsDir>
+
+    <!-- Složka modů hry: Dokumenty bývají v OneDrive (česky i anglicky), jinak v profilu. -->
+    <ModsDir Condition="'$(ModsDir)' == '' And Exists('$(USERPROFILE)\OneDrive\Dokumenty\Klei\OxygenNotIncluded')">$(USERPROFILE)\OneDrive\Dokumenty\Klei\OxygenNotIncluded\mods</ModsDir>
+    <ModsDir Condition="'$(ModsDir)' == '' And Exists('$(USERPROFILE)\OneDrive\Documents\Klei\OxygenNotIncluded')">$(USERPROFILE)\OneDrive\Documents\Klei\OxygenNotIncluded\mods</ModsDir>
+    <ModsDir Condition="'$(ModsDir)' == ''">$(USERPROFILE)\Documents\Klei\OxygenNotIncluded\mods</ModsDir>
 
     <!-- Hra běží na Unity 6 (Mono s API .NET Framework 4.8). -->
     <TargetFramework>net48</TargetFramework>
