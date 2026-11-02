@@ -20,7 +20,3 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
----
-Third-party components distributed with the PyCPU mod keep their own licenses:
-- IronPython 3.4.2 and DLR (Apache License 2.0), see mods/PyCPU/mod/LICENSE-IronPython.txt
-- Building animation from ONICPU by imengyu (MIT), see mods/PyCPU/mod/LICENSE-ONICPU.txt
