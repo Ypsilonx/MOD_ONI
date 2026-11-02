@@ -103,6 +103,7 @@ mods/PyCPU/               herní část PyCPU (budova, porty, panel, soubory skr
 mods/PyCPU.Scripting/     IronPython host, nasazuje se do PyCPU\lib\
 tests/                    xUnit testy Python hostu
 tools/DllStripper/        ořezání Microsoft.Dynamic.dll o typy, které by hru shodily
+tools/package.ps1         zipy pro Releases: pwsh tools\package.ps1 → dist\<Mod>-<verze>.zip
 docs/                     návrh a plán PyCPU
 ```
 

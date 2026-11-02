@@ -25,6 +25,7 @@ pro skill referenční implementace: nový obecný poznatek o ONI zapsat do skil
 - `mods/PyCPU/`: herní část (budova, porty, boční panel, soubory skriptů). Na IronPython neodkazuje.
 - `mods/PyCPU.Scripting/` → `lib\`: IronPython host, sandbox, limit kroků, `storage`.
 - `tests/PyCPU.Scripting.Tests/`: xUnit testy hostu. `tools/DllStripper/`: ořezání `Microsoft.Dynamic.dll`.
+- `tools/package.ps1`: Release build do `dist\stage` (ne do hry) → `dist\<Mod>-<verze>.zip` pro GitHub Releases.
 - `animace_názvy.txt` (jen lokálně, mimo git): výpis animací generátorů ze hry (podklad pro volbu `anim`).
 - `docs/specs/pycpu.md`: návrh PyCPU. `docs/plans/`: aktuální plán.
 

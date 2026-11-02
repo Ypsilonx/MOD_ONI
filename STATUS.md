@@ -1,6 +1,6 @@
 # Stav projektu
 
-Aktualizováno: 2026-10-31
+Aktualizováno: 2026-11-02
 
 ## Cíl
 
@@ -27,14 +27,18 @@ vedle savu, editace ve VS Code. Spec: `docs/specs/pycpu.md`.
 - PyCPU task 5 přijat (doladí se podle používání): `mod/README.md` (nápověda, kopíruje se jako `NAPOVEDA.md` do `pycpu\`
   při „Upravit ve VS Code“), 3 příklady `mod/examples/priklad_*.py` → knihovna při startu (nepřepisuje), 34 testů.
 
+- Příprava na GitHub (2026-11-02): MIT licence, README s badges, lokální cesty v `Directory.Build.user.props`,
+  historie přepsaná bez cest (filter-repo), `tools/package.ps1` → zipy. PyCPU vydáno jako 0.9.0 (pre-release).
+
 ## Rozpracováno
 
 - PyCPU podle `docs/plans/2026-10-29-pycpu.md`: zbývá task 6 (nezávislá revize kódu), pak 1.0.
 
 ## Další krok
 
-1. PyCPU task 6: nezávislá revize kódu. Varování „not added to plan screen subcategory“ (BuildingTuning) zatím neřešeno.
-2. Nástroje do `tools/`: filtr Player.log a kontrola kompatibility modů (dekompilace přes ilspycmd,
+1. Publikace na GitHub (repo `Ypsilonx/MOD_ONI`, release se zipy z `dist\`) – dělá uživatel.
+2. PyCPU task 6: nezávislá revize kódu. Varování „not added to plan screen subcategory“ (BuildingTuning) zatím neřešeno.
+3. Nástroje do `tools/`: filtr Player.log a kontrola kompatibility modů (dekompilace přes ilspycmd,
    porovnání cílů Harmony patchů s aktuální `Assembly-CSharp.dll`).
 
 ## Otevřené otázky / slepé uličky
